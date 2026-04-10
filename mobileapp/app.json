@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "RestaurantPOS Waiter Mobile",
+    "slug": "restaurantpos-waiter-mobile",
+    "scheme": "restaurantposmobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.restaurantpos.waitermobile"
+    },
+    "ios": {
+      "bundleIdentifier": "com.restaurantpos.waitermobile"
+    },
+    "extra": {
+      "owner": "RestaurantPOS"
+    }
+  }
+}

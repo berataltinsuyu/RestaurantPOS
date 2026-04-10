@@ -2,16 +2,23 @@
 .DS_Store
 Thumbs.db
 
-# Frontend local config
+# Env files
 .env
 .env.local
 .env.development.local
 .env.production.local
+mobileapp/.env
+mobileapp/.env.local
 
-# Frontend build/deps
+# Frontend / mobile deps
 node_modules/
 dist/
 coverage/
+
+# Expo / React Native
+mobileapp/.expo/
+mobileapp/.expo-shared/
+mobileapp/web-build/
 
 # Backend local config
 backend/appsettings.json
@@ -28,3 +35,6 @@ backend/obj/
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

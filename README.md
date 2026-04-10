@@ -1,77 +1,142 @@
-# RestaurantPOS
+🍽️ RestaurantPOS
 
-VakıfBank markalı restoran adisyon, masa yönetimi ve POS ödeme uygulaması.
+🇹🇷 Türkçe
 
-Bu proje, restoran ve kafe işletmeleri için geliştirilmiş bir yönetim sistemidir. Uygulama; masa takibi, adisyon yönetimi, ürün/mutfak akışı, ödeme alma, POS entegrasyonu, işlem geçmişi ve raporlama gibi süreçleri tek bir yapı altında toplar.
+RestaurantPOS, restoran ve kafe işletmeleri için geliştirilmiş uçtan uca adisyon, masa yönetimi ve POS ödeme sistemidir.
 
-## Proje Yapısı
+Proje; web tabanlı yönetim paneli, mobil garson uygulaması ve .NET backend altyapısı ile birlikte çalışan modern bir restoran otomasyon çözümüdür.
 
-```text
-RestaurantPOS/
-├── backend/          # ASP.NET Core Web API
-├── public/           # Statik frontend dosyaları
-├── src/              # React frontend
+⸻
+
+🚀 Proje Amacı
+
+RestaurantPOS’un amacı:
+	•	Restoran operasyonlarını dijitalleştirmek
+	•	Garson, kasiyer ve yönetici süreçlerini hızlandırmak
+	•	Hataları azaltmak ve veri doğruluğunu artırmak
+	•	Gerçek zamanlı (realtime) sistem ile tüm cihazları senkronize çalıştırmak
+
+	RestaurantPOS/
+├── backend/                 # ASP.NET Core Web API (Business Logic & API)
+├── src/                    # React Web POS (Frontend)
+├── public/                 # Statik dosyalar
+├── mobileapp/              # React Native (Expo) Garson Uygulaması
+├── figmadesign/            # UI mockup & referans tasarımlar (runtime değil)
 ├── package.json
 ├── vite.config.ts
 ├── README.md
 └── .gitignore
 
-Kullanılan Teknolojiler
+📱 Mobile App (Garson Uygulaması)
 
-Frontend
+mobileapp/ klasörü, gerçek React Native garson el terminali uygulamasını içerir.
+
+figmadesign/ → sadece referans
+mobileapp/   → gerçek uygulama
+
+figmadesign/:
+	•	UI taslakları
+	•	ekran akışları
+	•	tasarım referansları
+
+Production kodu değildir.
+
+⸻
+
+🏗️ Sistem Mimarisi
+
+Backend
+	•	ASP.NET Core Web API
+	•	Entity Framework Core
+	•	PostgreSQL (Supabase)
+
+Frontend (Web)
 	•	React
 	•	TypeScript
 	•	Vite
 	•	Tailwind CSS
 
-Backend
-	•	ASP.NET Core Web API
-	•	Entity Framework Core
-	•	PostgreSQL
-	•	Supabase
-	•	JWT Authentication
-	•	Swagger / OpenAPI
+Mobile (Garson Uygulaması)
+	•	React Native (Expo)
+	•	React Navigation
+	•	Zustand (state management)
+	•	Supabase Realtime
 
-Özellikler
-	•	Kullanıcı girişi ve rol bazlı erişim
-	•	Masa yönetimi
-	•	Adisyon oluşturma ve düzenleme
-	•	Ürün ve kategori yönetimi
-	•	Menü yönetimi
-	•	POS terminal yönetimi
-	•	Nakit / kart / bölünmüş ödeme
-	•	İade / iptal işlemleri
-	•	İşlem geçmişi
-	•	Gün sonu mutabakat
-	•	Raporlama ekranları
-	•	Rol ve yetki matrisi
+⸻
 
-Roller
+🧠 Veri Modeli (Core Domain)
+
+Sistem adisyon (bill) tabanlı çalışır:
+	•	RestaurantTables → masa durumu
+	•	Bills → aktif adisyon
+	•	BillItems → sipariş kalemleri
+	•	Payments → ödeme kayıtları
+
+⸻
+
+🔄 Realtime Senkronizasyon
+
+Mobil ve web uygulama aynı veri üzerinde çalışır:
+	•	Masa aç/kapat → anlık güncellenir
+	•	Sipariş ekleme → tüm cihazlara yansır
+	•	Ödeme → realtime update
+
+Kullanılan teknoloji:
+	•	Supabase Realtime
+
+⸻
+
+💳 Ödeme Sistemi
+
+Desteklenen ödeme tipleri:
+	•	Nakit ödeme
+	•	Kart ile ödeme (POS simülasyonu)
+	•	Bölünmüş ödeme (Split Payment)
+
+Split Payment
+	•	Aynı adisyon için birden fazla ödeme
+	•	SplitPaymentGroupId ile gruplanır
+
+⸻
+
+👥 Roller
 	•	Garson
 	•	Kasiyer
 	•	Şube Müdürü
 	•	Sistem Yöneticisi
 
-Veritabanı
+⸻
 
-Backend, PostgreSQL provider ile çalışır ve Supabase Session Pooler üzerinden bağlanır.
+⚙️ Özellikler
+	•	Kullanıcı girişi ve rol yönetimi
+	•	Masa yönetimi
+	•	Adisyon oluşturma
+	•	Ürün & kategori yönetimi
+	•	Menü yönetimi
+	•	POS terminal entegrasyonu
+	•	Nakit / kart / split ödeme
+	•	İade / iptal işlemleri
+	•	Gün sonu işlemleri
+	•	Raporlama
+	•	Yetki matrisi
 
-Demo Giriş Bilgileri
+⸻
 
-Şube kodu: 8547293
+🔐 Kimlik Doğrulama
+	•	JWT Authentication
+	•	Role-based authorization
 
-Kullanıcılar:
-	•	admin / Admin123!
-	•	mudur / Mudur123!
-	•	kasiyer / Kasiyer123!
-	•	ahmet / Ahmet123!
-	•	ayse / Ayse123!
+📌 Geliştirme Durumu
 
+Proje aktif geliştirme altındadır:
+	•	Web POS büyük ölçüde tamamlandı
+	•	Mobile app geliştirme ve stabilizasyon aşamasında
+	•	Backend modüler genişlemeye açık
 
-Geliştirme Durumu
+⸻
 
-Bu proje aktif geliştirme altındadır. Bazı modüller demo/PoC seviyesinden gerçek kullanım senaryosuna geçirilmektedir.
-
-Lisans
+📜 Lisans
 
 Bu proje eğitim, demo ve geliştirme amaçlı hazırlanmıştır.
+
+⸻
