@@ -2,75 +2,111 @@ import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+import { ApiRequestError } from "../../../api/http/api-client";
 import { Button } from "../../../components/common/Button";
 import { Screen } from "../../../components/common/Screen";
 import { SectionHeader } from "../../../components/common/SectionHeader";
 import { SurfaceCard } from "../../../components/common/SurfaceCard";
 import { ROUTES } from "../../../constants/routes";
+import { env } from "../../../config/env";
 import { RootStackParamList } from "../../../navigation/types";
+import { services } from "../../../services/composition-root";
 import { useAppStore } from "../../../state/app-store";
 import { colors, radii, spacing, typography } from "../../../theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, typeof ROUTES.LOGIN>;
 
 export function LoginScreen({ navigation }: Props) {
-  const [waiterName, setWaiterName] = useState("Ayse");
-  const [pin, setPin] = useState("1234");
+  const [waiterName, setWaiterName] = useState("ayse");
+  const [pin, setPin] = useState("Ayse123!");
   const setSession = useAppStore((state) => state.setSession);
 
-  function handleLogin() {
+  async function handleLogin() {
     if (!waiterName.trim() || !pin.trim()) {
-      Alert.alert("Login required", "Enter waiter name and PIN.");
+      Alert.alert("Giriş gerekli", "Garson adı ve PIN girin.");
       return;
     }
 
-    setSession({
-      deviceLabel: "Handheld 01",
-      shiftId: "shift-demo-1",
-      waiterId: "waiter-demo-1",
-      waiterName: waiterName.trim(),
-    });
-    navigation.replace(ROUTES.TABLES_OVERVIEW);
+    try {
+      const response = await services.backend.login({
+        branchId: env.branchId,
+        password: pin.trim(),
+        userName: waiterName.trim(),
+      });
+
+      setSession({
+        accessToken: response.token,
+        backendUserId: response.user.id,
+        branchId: response.branch.id,
+        deviceLabel: "Handheld 01",
+        permissions: response.permissions,
+        shiftId: "shift-live-session",
+        userName: response.user.userName,
+        waiterId: String(response.user.id),
+        waiterName: response.user.fullName,
+      });
+      navigation.replace(ROUTES.TABLES_OVERVIEW);
+    } catch (error) {
+      console.error("[LoginScreen] Backend login failed.", error);
+      const detail =
+        error instanceof ApiRequestError
+          ? error.responseBody?.trim() ||
+            `HTTP ${error.status} hatası alındı.`
+          : error instanceof Error
+            ? error.message
+            : "Bilinmeyen hata";
+      Alert.alert(
+        "Giriş başarısız",
+        detail,
+      );
+    }
   }
 
   return (
-    <Screen scroll={false} contentContainerStyle={styles.content}>
+    <Screen
+      contentContainerStyle={styles.content}
+      includeTopSafeArea
+      scroll={false}
+    >
       <SectionHeader
-        eyebrow="Waiter Handheld"
-        subtitle="Mobile login remains separate from the web runtime. Real authentication will connect to the backend later."
-        title="RestaurantPOS waiter session"
+        eyebrow="Garson El Terminali"
+        subtitle="Garson hesabınızla giriş yapın. Masa ve ödeme bilgileri web POS ile aynı canlı akıştan görüntülenir."
+        title="Giriş"
       />
 
       <SurfaceCard elevated>
-        <Text style={styles.label}>Waiter name</Text>
+        <Text style={styles.label}>Garson Adı</Text>
         <TextInput
-          autoCapitalize="words"
+          autoCapitalize="none"
+          autoCorrect={false}
           onChangeText={setWaiterName}
-          placeholder="Enter waiter name"
+          placeholder="Kullanıcı adını girin"
           placeholderTextColor={colors.textMuted}
           style={styles.input}
           value={waiterName}
         />
 
-        <Text style={styles.label}>PIN</Text>
+        <Text style={styles.label}>Şifre</Text>
         <TextInput
-          keyboardType="number-pad"
+          autoCapitalize="none"
+          autoCorrect={false}
           onChangeText={setPin}
-          placeholder="Enter PIN"
+          placeholder="Şifrenizi girin"
           placeholderTextColor={colors.textMuted}
           secureTextEntry
           style={styles.input}
           value={pin}
         />
 
-        <Button onPress={handleLogin} title="Start waiter shift" />
+        <Button onPress={handleLogin} title="Giriş Yap" />
       </SurfaceCard>
 
       <SurfaceCard tone="brand">
-        <Text style={styles.noteTitle}>Current scope</Text>
+        <Text style={styles.noteTitle}>Bilgilendirme</Text>
         <Text style={styles.noteCopy}>
-          This architecture only establishes the handheld waiter flow.
-          `figmadesign/` stays reference-only and is not imported into the app.
+          Bu uygulama yalnızca garson el terminali akışı için hazırlanmıştır.
+          `figmadesign/` yalnızca tasarım referansıdır, üretim uygulamasının
+          bir parçası değildir.
         </Text>
       </SurfaceCard>
     </Screen>
@@ -79,6 +115,7 @@ export function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   content: {
+    gap: spacing.md,
     justifyContent: "center",
     paddingBottom: spacing.xxxl,
   },
@@ -90,7 +127,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: typography.body.fontSize,
     marginBottom: spacing.lg,
-    minHeight: 52,
+    minHeight: 56,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },

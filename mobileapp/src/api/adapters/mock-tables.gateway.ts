@@ -25,10 +25,10 @@ export class MockTablesGateway implements TablesGateway {
     const updatedTable: TableSummary = {
       activeOrderId: existingTable?.activeOrderId,
       areaLabel: existingTable?.areaLabel ?? "Salon",
-      assignedWaiterName: "Assigned from mobile",
+      assignedWaiterName: "Mobil cihazdan atandı",
       guestCount: input.guestCount,
       id: input.tableId,
-      label: existingTable?.label ?? `Table ${input.tableId}`,
+      label: existingTable?.label ?? `Masa ${input.tableId}`,
       seats: existingTable?.seats ?? 4,
       status: "occupied",
       totalAmount: existingTable?.totalAmount ?? 0,
@@ -48,15 +48,33 @@ export class MockTablesGateway implements TablesGateway {
     return { ...updatedTable };
   }
 
-  async moveTable(_input: MoveTableInput): Promise<void> {
-    return;
+  async moveTable(input: MoveTableInput): Promise<TableSummary> {
+    return (
+      (await this.getTable(input.targetTableId)) ??
+      (await this.openTable({
+        guestCount: 2,
+        tableId: input.targetTableId,
+        waiterId: "0",
+      }))
+    );
   }
 
-  async mergeTables(_input: MergeTablesInput): Promise<void> {
-    return;
+  async mergeTables(input: MergeTablesInput): Promise<TableSummary> {
+    return (
+      (await this.getTable(input.sourceTableId)) ??
+      (await this.openTable({
+        guestCount: 2,
+        tableId: input.sourceTableId,
+        waiterId: "0",
+      }))
+    );
   }
 
-  async splitTable(_input: SplitTableInput): Promise<void> {
-    return;
+  async splitTable(input: SplitTableInput): Promise<TableSummary> {
+    return this.openTable({
+      guestCount: 2,
+      tableId: input.targetTableId,
+      waiterId: "0",
+    });
   }
 }

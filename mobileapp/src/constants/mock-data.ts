@@ -1,9 +1,4 @@
-import {
-  MenuCategory,
-  MenuProduct,
-  OrderDetail,
-  TableSummary,
-} from "../types/domain";
+import { OrderDetail, TableSummary } from "../types/domain";
 
 function buildTodayTime(hours: number, minutes: number) {
   const date = new Date();
@@ -19,7 +14,7 @@ export const MOCK_TABLES: TableSummary[] = [
     assignedWaiterName: "Ahmet Yılmaz",
     guestCount: 4,
     id: "table-1",
-    label: "Table 1",
+    label: "Masa 1",
     seats: 4,
     status: "occupied",
     totalAmount: 850.5,
@@ -29,7 +24,7 @@ export const MOCK_TABLES: TableSummary[] = [
     areaLabel: "Salon",
     guestCount: 0,
     id: "table-2",
-    label: "Table 2",
+    label: "Masa 2",
     seats: 4,
     status: "empty",
     totalAmount: 0,
@@ -41,7 +36,7 @@ export const MOCK_TABLES: TableSummary[] = [
     assignedWaiterName: "Ahmet Yılmaz",
     guestCount: 2,
     id: "table-3",
-    label: "Table 3",
+    label: "Masa 3",
     seats: 4,
     status: "paymentPending",
     totalAmount: 425,
@@ -53,7 +48,7 @@ export const MOCK_TABLES: TableSummary[] = [
     assignedWaiterName: "Ahmet Yılmaz",
     guestCount: 6,
     id: "table-4",
-    label: "Table 4",
+    label: "Masa 4",
     seats: 6,
     status: "occupied",
     totalAmount: 1240.75,
@@ -63,7 +58,7 @@ export const MOCK_TABLES: TableSummary[] = [
     areaLabel: "Salon",
     guestCount: 0,
     id: "table-5",
-    label: "Table 5",
+    label: "Masa 5",
     seats: 4,
     status: "empty",
     totalAmount: 0,
@@ -75,7 +70,7 @@ export const MOCK_TABLES: TableSummary[] = [
     assignedWaiterName: "Ahmet Yılmaz",
     guestCount: 3,
     id: "table-6",
-    label: "Table 6",
+    label: "Masa 6",
     seats: 4,
     status: "occupied",
     totalAmount: 620.25,
@@ -213,136 +208,3 @@ export const MOCK_ORDERS: Record<string, OrderDetail> = {
     updatedAt: buildTodayTime(15, 0),
   },
 };
-
-export const MOCK_MENU_CATEGORIES: MenuCategory[] = [
-  {
-    id: "grill",
-    label: "Grill",
-    sortOrder: 1,
-  },
-  {
-    id: "drinks",
-    label: "Drinks",
-    sortOrder: 2,
-  },
-  {
-    id: "dessert",
-    label: "Dessert",
-    sortOrder: 3,
-  },
-];
-
-export const MOCK_MENU_PRODUCTS: MenuProduct[] = [
-  {
-    categoryId: "grill",
-    id: "product-adana",
-    isAvailable: true,
-    name: "Adana Kebap",
-    price: 260,
-  },
-  {
-    categoryId: "grill",
-    id: "product-kofte",
-    isAvailable: true,
-    name: "Izgara Köfte",
-    price: 145,
-  },
-  {
-    categoryId: "grill",
-    id: "product-sea-bass",
-    isAvailable: true,
-    name: "Sea Bass",
-    price: 540,
-  },
-  {
-    categoryId: "grill",
-    id: "product-burger",
-    isAvailable: true,
-    name: "Burger",
-    price: 310,
-  },
-  {
-    categoryId: "grill",
-    id: "product-grilled-chicken",
-    isAvailable: true,
-    name: "Izgara Tavuk",
-    price: 245,
-  },
-  {
-    categoryId: "grill",
-    id: "product-mixed-grill",
-    isAvailable: true,
-    name: "Karışık Izgara",
-    price: 310.25,
-  },
-  {
-    categoryId: "drinks",
-    id: "product-lemonade",
-    isAvailable: true,
-    name: "Limonata",
-    price: 50,
-  },
-  {
-    categoryId: "drinks",
-    id: "product-ayran",
-    isAvailable: true,
-    name: "Ayran",
-    price: 40,
-  },
-  {
-    categoryId: "drinks",
-    id: "product-tea",
-    isAvailable: true,
-    name: "Çay",
-    price: 50,
-  },
-  {
-    categoryId: "drinks",
-    id: "product-sparkling-water",
-    isAvailable: true,
-    name: "Sparkling Water",
-    price: 80,
-  },
-  {
-    categoryId: "dessert",
-    id: "product-kunefe",
-    isAvailable: true,
-    name: "Kunefe",
-    price: 220,
-  },
-  {
-    categoryId: "dessert",
-    id: "product-salad",
-    isAvailable: true,
-    name: "Karışık Salata",
-    price: 220,
-  },
-  {
-    categoryId: "dessert",
-    id: "product-pide",
-    isAvailable: true,
-    name: "Kaşarlı Pide",
-    price: 202.75,
-  },
-  {
-    categoryId: "dessert",
-    id: "product-meze",
-    isAvailable: true,
-    name: "Meze Tabağı",
-    price: 310,
-  },
-  {
-    categoryId: "dessert",
-    id: "product-manti",
-    isAvailable: true,
-    name: "Mantı",
-    price: 180.125,
-  },
-  {
-    categoryId: "dessert",
-    id: "product-soup",
-    isAvailable: true,
-    name: "Mercimek Çorbası",
-    price: 45,
-  },
-];

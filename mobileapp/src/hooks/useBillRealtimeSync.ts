@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useIsFocused } from "@react-navigation/native";
+import { useEffect, useRef } from "react";
 
 import { services } from "../services/composition-root";
 import { useAppStore } from "../state/app-store";
 
 export function useBillRealtimeSync(tableId: string) {
+  const isFocused = useIsFocused();
   const clearOrderByTableId = useAppStore((state) => state.clearOrderByTableId);
   const clearPaymentsForBill = useAppStore((state) => state.clearPaymentsForBill);
   const existingBillId = useAppStore(
@@ -14,50 +16,104 @@ export function useBillRealtimeSync(tableId: string) {
   const setPaymentsForBill = useAppStore((state) => state.setPaymentsForBill);
   const upsertOrder = useAppStore((state) => state.upsertOrder);
   const upsertTable = useAppStore((state) => state.upsertTable);
+  const existingBillIdRef = useRef<number | null>(existingBillId);
+  const callbacksRef = useRef({
+    clearOrderByTableId,
+    clearPaymentsForBill,
+    markRealtimeEvent,
+    setConnectionState,
+    setPaymentsForBill,
+    upsertOrder,
+    upsertTable,
+  });
+
+  existingBillIdRef.current = existingBillId;
+  callbacksRef.current = {
+    clearOrderByTableId,
+    clearPaymentsForBill,
+    markRealtimeEvent,
+    setConnectionState,
+    setPaymentsForBill,
+    upsertOrder,
+    upsertTable,
+  };
 
   useEffect(() => {
-    return services.realtimeSync.subscribeBillScope({
+    if (!isFocused) {
+      console.info("[useBillRealtimeSync] Skipping bill-scope subscription because screen is not focused.", {
+        tableId,
+      });
+      return;
+    }
+
+    console.info("[useBillRealtimeSync] Creating bill-scope subscription.", {
+      tableId,
+    });
+
+    const unsubscribe = services.realtimeSync.subscribeBillScope({
       onBillSnapshot: (bill) => {
+        const {
+          clearOrderByTableId: clearOrder,
+          clearPaymentsForBill: clearPayments,
+          upsertOrder: upsertBill,
+        } = callbacksRef.current;
+
         if (!bill) {
-          clearOrderByTableId(tableId);
-          if (existingBillId !== null) {
-            clearPaymentsForBill(existingBillId);
+          clearOrder(tableId);
+          if (existingBillIdRef.current !== null) {
+            clearPayments(existingBillIdRef.current);
           }
           return;
         }
 
-        upsertOrder(bill);
+        if (
+          existingBillIdRef.current !== null &&
+          existingBillIdRef.current !== bill.dbId
+        ) {
+          clearPayments(existingBillIdRef.current);
+        }
+
+        upsertBill(bill);
       },
-      onConnectionStateChange: setConnectionState,
+      onConnectionStateChange: (nextState) => {
+        callbacksRef.current.setConnectionState(nextState);
+      },
       onPaymentsSnapshot: (billId, payments) => {
+        const {
+          clearPaymentsForBill: clearPayments,
+          setPaymentsForBill: setPayments,
+        } = callbacksRef.current;
+
         if (billId === null) {
+          if (existingBillIdRef.current !== null) {
+            clearPayments(existingBillIdRef.current);
+          }
           return;
         }
 
         if (!payments.length) {
-          clearPaymentsForBill(billId);
+          clearPayments(billId);
           return;
         }
 
-        setPaymentsForBill(billId, payments);
+        setPayments(billId, payments);
       },
-      onRealtimeEvent: markRealtimeEvent,
+      onRealtimeEvent: () => {
+        callbacksRef.current.markRealtimeEvent();
+      },
       onTableSnapshot: (table) => {
         if (table) {
-          upsertTable(table);
+          callbacksRef.current.upsertTable(table);
         }
       },
       tableId,
     });
-  }, [
-    clearOrderByTableId,
-    clearPaymentsForBill,
-    existingBillId,
-    markRealtimeEvent,
-    setConnectionState,
-    setPaymentsForBill,
-    tableId,
-    upsertOrder,
-    upsertTable,
-  ]);
+
+    return () => {
+      console.info("[useBillRealtimeSync] Cleaning up bill-scope subscription.", {
+        tableId,
+      });
+      unsubscribe();
+    };
+  }, [isFocused, tableId]);
 }

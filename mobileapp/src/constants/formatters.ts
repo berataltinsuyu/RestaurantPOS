@@ -1,7 +1,21 @@
 import { OrderDetail } from "../types/domain";
 
-export function formatCurrency(amount: number) {
-  return `₺${amount.toFixed(2)}`;
+function normalizeCurrencyAmount(amount: number | null | undefined) {
+  const parsed = Number(amount);
+
+  if (Number.isFinite(parsed)) {
+    return parsed;
+  }
+
+  console.warn("[formatCurrency] Invalid currency amount received. Falling back to 0.", {
+    amount,
+  });
+
+  return 0;
+}
+
+export function formatCurrency(amount: number | null | undefined) {
+  return `₺${normalizeCurrencyAmount(amount).toFixed(2)}`;
 }
 
 export function formatTableLabel(label: string) {
@@ -30,6 +44,7 @@ export function getOrderPaymentSummary(order: OrderDetail) {
   };
 }
 
-export function roundCurrency(amount: number) {
-  return Math.round(amount * 100) / 100;
+export function roundCurrency(amount: number | null | undefined) {
+  const normalizedAmount = normalizeCurrencyAmount(amount);
+  return Math.round(normalizedAmount * 100) / 100;
 }

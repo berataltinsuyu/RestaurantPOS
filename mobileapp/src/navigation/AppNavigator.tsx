@@ -1,5 +1,4 @@
 import React from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { LoginScreen } from "../app/screens/auth/LoginScreen";
@@ -22,7 +21,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
   const session = useAppStore((state) => state.session);
-  const clearSession = useAppStore((state) => state.clearSession);
 
   return (
     <Stack.Navigator
@@ -52,41 +50,31 @@ export function AppNavigator() {
       <Stack.Screen
         component={TablesOverviewScreen}
         name={ROUTES.TABLES_OVERVIEW}
-        options={({ navigation }) => ({
-          headerRight: () => (
-            <Pressable
-              onPress={() => {
-                clearSession();
-                navigation.replace(ROUTES.LOGIN);
-              }}
-            >
-              <Text style={styles.headerAction}>Logout</Text>
-            </Pressable>
-          ),
-          title: "Masa Plani",
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
       <Stack.Screen
         component={TableDetailScreen}
         name={ROUTES.TABLE_DETAIL}
-        options={{ title: "Table Detail" }}
+        options={{ title: "Masa Detayı" }}
       />
       <Stack.Screen
         component={OrderDetailScreen}
         name={ROUTES.ORDER_DETAIL}
-        options={{ title: "Order Detail" }}
+        options={{ title: "Sipariş Detayı" }}
       />
       <Stack.Screen
         component={MenuSelectionScreen}
         name={ROUTES.MENU_SELECTION}
-        options={{ title: "Menu Selection" }}
+        options={{ title: "Ürün Seçimi" }}
       />
       <Stack.Screen
         component={PaymentScreen}
         name={ROUTES.PAYMENT}
         options={{
           presentation: "modal",
-          title: "Payment",
+          title: "Ödeme",
         }}
       />
       <Stack.Screen
@@ -94,7 +82,7 @@ export function AppNavigator() {
         name={ROUTES.SPLIT_PAYMENT}
         options={{
           presentation: "modal",
-          title: "Split Payment",
+          title: "Bölünmüş Ödeme",
         }}
       />
       <Stack.Screen
@@ -102,7 +90,7 @@ export function AppNavigator() {
         name={ROUTES.TABLE_ACTIONS}
         options={{
           presentation: "modal",
-          title: "Table Actions",
+          title: "Masa İşlemleri",
         }}
       />
       <Stack.Screen
@@ -111,7 +99,7 @@ export function AppNavigator() {
         options={{
           headerShown: false,
           presentation: "modal",
-          title: "Card POS",
+          title: "Kart ile Ödeme",
         }}
       />
       <Stack.Screen
@@ -120,7 +108,7 @@ export function AppNavigator() {
         options={{
           headerShown: false,
           presentation: "modal",
-          title: "Contactless",
+          title: "Temassız Kart Okutun",
         }}
       />
       <Stack.Screen
@@ -129,17 +117,9 @@ export function AppNavigator() {
         options={{
           gestureEnabled: false,
           headerShown: false,
-          title: "Payment Success",
+          title: "Ödeme Başarılı",
         }}
       />
     </Stack.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  headerAction: {
-    color: colors.primary,
-    fontSize: typography.body.fontSize,
-    fontWeight: typography.bodyStrong.fontWeight,
-  },
-});

@@ -228,7 +228,7 @@ cd mobileapp
 npm install
 ```
 
-2. Optional: copy the example environment file for local validation. The current mock data flow works without real backend credentials, so you can leave placeholder values while validating UI and navigation.
+2. Copy the example environment file for local validation. Shared table, bill, bill item, and payment reads require real Supabase credentials and the correct branch id.
 
 ```bash
 cp .env.example .env

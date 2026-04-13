@@ -1,54 +1,79 @@
-🍽️ RestaurantPOS
+# 🍽️ RestaurantPOS
 
-🇹🇷 Türkçe
+RestaurantPOS, restoran ve kafe operasyonlarını yönetmek için geliştirilen full-stack bir POS ve adisyon yönetim sistemidir.  
+Proje; web tabanlı yönetim paneli, mobil garson uygulaması ve .NET backend altyapısından oluşur.
 
-RestaurantPOS, restoran ve kafe işletmeleri için geliştirilmiş uçtan uca adisyon, masa yönetimi ve POS ödeme sistemidir.
+---
 
-Proje; web tabanlı yönetim paneli, mobil garson uygulaması ve .NET backend altyapısı ile birlikte çalışan modern bir restoran otomasyon çözümüdür.
+## Proje Özeti
 
-⸻
+RestaurantPOS; restoranlarda masa yönetimi, adisyon takibi, sipariş yönetimi, ödeme alma ve operasyonel süreçleri dijitalleştirmek amacıyla geliştirilmiştir.
 
-🚀 Proje Amacı
+Sistem temel olarak şu bileşenlerden oluşur:
 
-RestaurantPOS’un amacı:
-	•	Restoran operasyonlarını dijitalleştirmek
-	•	Garson, kasiyer ve yönetici süreçlerini hızlandırmak
-	•	Hataları azaltmak ve veri doğruluğunu artırmak
-	•	Gerçek zamanlı (realtime) sistem ile tüm cihazları senkronize çalıştırmak
+- **Web POS arayüzü**
+- **Mobil garson uygulaması**
+- **ASP.NET Core Web API backend**
+- **Supabase PostgreSQL veritabanı**
+- **Supabase Realtime senkronizasyon altyapısı**
 
-	RestaurantPOS/
-├── backend/                 # ASP.NET Core Web API (Business Logic & API)
-├── src/                    # React Web POS (Frontend)
-├── public/                 # Statik dosyalar
-├── mobileapp/              # React Native (Expo) Garson Uygulaması
-├── figmadesign/            # UI mockup & referans tasarımlar (runtime değil)
+---
+
+## Proje Yapısı
+
+```text
+RestaurantPOS/
+├── backend/                 # ASP.NET Core Web API
+├── src/                     # React web arayüzü
+├── public/                  # Statik frontend dosyaları
+├── mobileapp/               # React Native (Expo) mobil garson uygulaması
+├── figmadesign/             # Referans tasarım / mockup dosyaları
 ├── package.json
 ├── vite.config.ts
 ├── README.md
 └── .gitignore
 
-📱 Mobile App (Garson Uygulaması)
 
-mobileapp/ klasörü, gerçek React Native garson el terminali uygulamasını içerir.
+Bileşenler
 
-figmadesign/ → sadece referans
-mobileapp/   → gerçek uygulama
+Web Uygulaması
 
-figmadesign/:
-	•	UI taslakları
-	•	ekran akışları
-	•	tasarım referansları
+Web tarafı restoran yönetim ekranlarını içerir.
 
-Production kodu değildir.
+Örnek kullanım alanları:
+	•	masa planı görüntüleme
+	•	ürün ve kategori yönetimi
+	•	adisyon takibi
+	•	ödeme süreçleri
+	•	rol ve yetki yönetimi
+	•	terminal ve operasyon yönetimi
+
+Mobil Uygulama
+
+mobileapp/ klasörü gerçek mobil uygulamayı içerir.
+
+Mobil uygulama temel olarak garsonların el terminali üzerinden şu işlemleri yapmasına odaklanır:
+	•	masa planını görüntüleme
+	•	masa açma
+	•	sipariş detayını görüntüleme
+	•	ürün ekleme
+	•	ödeme alma
+	•	bölünmüş ödeme
+	•	temassız kart okutma akışı
+
+Tasarım Referansları
+
+figmadesign/ klasörü çalışma ve referans amaçlıdır.
+
+Bu klasör:
+	•	üretim kodu değildir
+	•	yalnızca tasarım ve akış referansı olarak tutulur
+
+Gerçek mobil uygulama yalnızca mobileapp/ içindedir.
 
 ⸻
 
-🏗️ Sistem Mimarisi
-
-Backend
-	•	ASP.NET Core Web API
-	•	Entity Framework Core
-	•	PostgreSQL (Supabase)
+Kullanılan Teknolojiler
 
 Frontend (Web)
 	•	React
@@ -56,87 +81,95 @@ Frontend (Web)
 	•	Vite
 	•	Tailwind CSS
 
-Mobile (Garson Uygulaması)
-	•	React Native (Expo)
-	•	React Navigation
-	•	Zustand (state management)
-	•	Supabase Realtime
-
-⸻
-
-🧠 Veri Modeli (Core Domain)
-
-Sistem adisyon (bill) tabanlı çalışır:
-	•	RestaurantTables → masa durumu
-	•	Bills → aktif adisyon
-	•	BillItems → sipariş kalemleri
-	•	Payments → ödeme kayıtları
-
-⸻
-
-🔄 Realtime Senkronizasyon
-
-Mobil ve web uygulama aynı veri üzerinde çalışır:
-	•	Masa aç/kapat → anlık güncellenir
-	•	Sipariş ekleme → tüm cihazlara yansır
-	•	Ödeme → realtime update
-
-Kullanılan teknoloji:
-	•	Supabase Realtime
-
-⸻
-
-💳 Ödeme Sistemi
-
-Desteklenen ödeme tipleri:
-	•	Nakit ödeme
-	•	Kart ile ödeme (POS simülasyonu)
-	•	Bölünmüş ödeme (Split Payment)
-
-Split Payment
-	•	Aynı adisyon için birden fazla ödeme
-	•	SplitPaymentGroupId ile gruplanır
-
-⸻
-
-👥 Roller
-	•	Garson
-	•	Kasiyer
-	•	Şube Müdürü
-	•	Sistem Yöneticisi
-
-⸻
-
-⚙️ Özellikler
-	•	Kullanıcı girişi ve rol yönetimi
-	•	Masa yönetimi
-	•	Adisyon oluşturma
-	•	Ürün & kategori yönetimi
-	•	Menü yönetimi
-	•	POS terminal entegrasyonu
-	•	Nakit / kart / split ödeme
-	•	İade / iptal işlemleri
-	•	Gün sonu işlemleri
-	•	Raporlama
-	•	Yetki matrisi
-
-⸻
-
-🔐 Kimlik Doğrulama
+Backend
+	•	ASP.NET Core Web API
+	•	Entity Framework Core
+	•	PostgreSQL
 	•	JWT Authentication
-	•	Role-based authorization
+	•	Swagger / OpenAPI
 
-📌 Geliştirme Durumu
+Mobile
+	•	React Native
+	•	Expo
+	•	React Navigation
+	•	Zustand
 
-Proje aktif geliştirme altındadır:
-	•	Web POS büyük ölçüde tamamlandı
-	•	Mobile app geliştirme ve stabilizasyon aşamasında
-	•	Backend modüler genişlemeye açık
+Database / Sync
+	•	Supabase PostgreSQL
+	•	Supabase Realtime
+
+⸻
+
+Temel Özellikler
+	•	kullanıcı girişi ve oturum yönetimi
+	•	masa planı ve masa durumu takibi
+	•	adisyon oluşturma ve yönetme
+	•	siparişe ürün ekleme
+	•	kategori ve ürün listeleme
+	•	nakit ödeme
+	•	kart ile ödeme
+	•	bölünmüş ödeme
+	•	masa taşıma
+	•	masa birleştirme / ayırma akışları
+	•	gerçek veri okuma
+	•	mobil ve web arasında ortak veri modeli
 
 ⸻
 
-📜 Lisans
+Veri Modeli
 
-Bu proje eğitim, demo ve geliştirme amaçlı hazırlanmıştır.
+Sistem adisyon (bill) bazlı çalışır.
+
+Ana tablolar:
+	•	RestaurantTables
+	•	Bills
+	•	BillItems
+	•	Payments
+	•	Products
+	•	ProductCategories
+	•	Users
+	•	Branches
 
 ⸻
+
+Mimari Notlar
+
+Mobil tarafta
+
+Mobil uygulama:
+	•	Supabase üzerinden veri okur
+	•	Realtime ile güncel durumu dinler
+	•	kritik işlemler için backend API kullanır
+
+Yazma işlemleri
+
+Aşağıdaki işlemler mobilde sadece local state ile değil, gerçek backend akışı ile çalışmalıdır:
+	•	masa açma
+	•	masa taşıma
+	•	ödeme tamamlama
+	•	ürün ekleme
+	•	split payment işlemleri
+
+Geliştirme Notları
+	•	figmadesign/ sadece referans amaçlıdır
+	•	mobileapp/ gerçek mobil uygulamadır
+	•	backend ve web ile ortak veri modeli kullanılmaktadır
+	•	mobil uygulama aktif geliştirme altındadır
+	•	bazı akışlar halen stabilizasyon ve UX iyileştirme aşamasındadır
+
+⸻
+
+Mevcut Durum
+
+Şu an projede:
+	•	mobil uygulama çalışır durumdadır
+	•	Supabase veri okuma entegrasyonu bulunmaktadır
+	•	bazı write işlemleri backend entegrasyonu ile ilerlemektedir
+	•	UI/UX iyileştirmeleri devam etmektedir
+	•	gerçek kullanım senaryoları üzerinden hata ayıklama ve düzeltme sürmektedir
+
+⸻
+
+Lisans
+
+Bu proje eğitim, demo, geliştirme ve portföy amaçlı hazırlanan bir staj projesidir.

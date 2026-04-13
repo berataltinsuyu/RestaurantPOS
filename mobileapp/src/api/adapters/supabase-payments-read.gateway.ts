@@ -7,14 +7,23 @@ const PAYMENT_COLUMNS =
   "Id,BillId,TerminalId,PaymentType,Amount,Status,ReferenceNo,BankApprovalCode,CardMaskedPan,ErrorCode,ErrorMessage,CompletedAt,CreatedByUserId,OriginalPaymentId,SplitPaymentGroupId,Notes,RefundReason,CreatedAt";
 
 export class SupabasePaymentsReadGateway implements PaymentsReadGateway {
-  public readonly isConfigured = isSupabaseConfigured();
+  public get isConfigured() {
+    return isSupabaseConfigured();
+  }
 
   async listPaymentsByBillId(billId: number): Promise<PaymentRecord[]> {
     const client = getSupabaseClient();
 
     if (!client) {
+      console.warn("[SupabasePaymentsReadGateway] Payments query skipped because Supabase client is unavailable.", {
+        billId,
+      });
       return [];
     }
+
+    console.info("[SupabasePaymentsReadGateway] Querying Payments.", {
+      billId,
+    });
 
     const { data, error } = await client
       .from("Payments")
@@ -23,8 +32,20 @@ export class SupabasePaymentsReadGateway implements PaymentsReadGateway {
       .order("CreatedAt", { ascending: true });
 
     if (error) {
+      console.error("[SupabasePaymentsReadGateway] Payments query failed.", {
+        billId,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        message: error.message,
+      });
       throw error;
     }
+
+    console.info("[SupabasePaymentsReadGateway] Payments query completed.", {
+      billId,
+      rowCount: data?.length ?? 0,
+    });
 
     return (data ?? []).map(normalizePaymentRecord);
   }

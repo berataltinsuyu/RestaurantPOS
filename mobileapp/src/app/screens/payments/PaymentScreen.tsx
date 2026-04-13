@@ -1,17 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
-  Pressable,
+  Alert,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+import { getBackendErrorMessage } from "../../../api/http/api-client";
 import { BottomActionBar } from "../../../components/common/BottomActionBar";
 import { Button } from "../../../components/common/Button";
 import { InfoRow } from "../../../components/common/InfoRow";
 import { Screen } from "../../../components/common/Screen";
-import { SectionHeader } from "../../../components/common/SectionHeader";
 import { SurfaceCard } from "../../../components/common/SurfaceCard";
 import { PaymentMethodCard } from "../../../components/payments/PaymentMethodCard";
 import {
@@ -41,7 +41,9 @@ type PaymentSelection = "card" | "cash" | "split";
 export function PaymentScreen({ navigation, route }: Props) {
   const { tableId } = route.params;
   useBillRealtimeSync(tableId);
+  const paymentSubmitLockRef = useRef(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentSelection>("card");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const table = useAppStore((state) =>
     state.tables.find((candidate) => candidate.id === tableId),
   );
@@ -49,8 +51,6 @@ export function PaymentScreen({ navigation, route }: Props) {
   const setPaymentIntent = useAppStore((state) => state.setPaymentIntent);
   const clearPaymentIntent = useAppStore((state) => state.clearPaymentIntent);
   const clearSplitPayments = useAppStore((state) => state.clearSplitPayments);
-  const upsertOrder = useAppStore((state) => state.upsertOrder);
-  const upsertTable = useAppStore((state) => state.upsertTable);
 
   const paymentSummary = useMemo(
     () => (order ? getOrderPaymentSummary(order) : null),
@@ -63,7 +63,7 @@ export function PaymentScreen({ navigation, route }: Props) {
       <Screen>
         <SurfaceCard>
           <Text style={styles.copy}>
-            Payment requires both table and order context.
+            Ödeme ekranı için masa ve sipariş bilgisi gereklidir.
           </Text>
         </SurfaceCard>
       </Screen>
@@ -98,20 +98,7 @@ export function PaymentScreen({ navigation, route }: Props) {
       orderId: currentOrder.id,
       tableId,
     });
-
-    upsertOrder({
-      ...currentOrder,
-      status: "paid",
-      tax: currentPaymentSummary.serviceFee,
-      total: currentPaymentSummary.total,
-      updatedAt: new Date().toISOString(),
-    });
-    upsertTable({
-      ...currentTable,
-      status: "paid",
-      totalAmount: currentPaymentSummary.total,
-      updatedAt: new Date().toISOString(),
-    });
+    await services.sync.refreshAfterMutation(tableId);
 
     navigation.replace(ROUTES.PAYMENT_SUCCESS, {
       amount: receipt.amount,
@@ -122,17 +109,62 @@ export function PaymentScreen({ navigation, route }: Props) {
   }
 
   async function handlePrimaryAction() {
-    if (selectedMethod === "card") {
-      await handleCardPayment();
+    if (paymentSubmitLockRef.current) {
+      console.info("[PaymentScreen] Duplicate payment submit prevented.", {
+        method: selectedMethod,
+        tableId,
+      });
       return;
     }
 
-    if (selectedMethod === "cash") {
-      await handleCashPayment();
-      return;
-    }
+    paymentSubmitLockRef.current = true;
+    setIsSubmitting(true);
+    console.info("[PaymentScreen] Payment submit started.", {
+      amount: currentCollectibleAmount,
+      method: selectedMethod,
+      orderId: currentOrder.id,
+      tableId,
+    });
 
-    navigation.navigate(ROUTES.SPLIT_PAYMENT, { tableId: currentTable.id });
+    let completed = false;
+
+    try {
+      if (selectedMethod === "card") {
+        await handleCardPayment();
+        completed = true;
+        return;
+      }
+
+      if (selectedMethod === "cash") {
+        await handleCashPayment();
+        completed = true;
+        return;
+      }
+
+      navigation.navigate(ROUTES.SPLIT_PAYMENT, { tableId: currentTable.id });
+      completed = true;
+    } catch (error) {
+      console.error("[PaymentScreen] Payment action failed.", error);
+      const detail = getBackendErrorMessage(
+        error,
+        "İşlem backend üzerinde tamamlanamadı. Lütfen tekrar deneyin.",
+      );
+      Alert.alert(
+        "Ödeme başlatılamadı",
+        detail,
+      );
+    } finally {
+      console.info("[PaymentScreen] Payment submit finished.", {
+        completed,
+        method: selectedMethod,
+        tableId,
+      });
+
+      if (!completed) {
+        paymentSubmitLockRef.current = false;
+        setIsSubmitting(false);
+      }
+    }
   }
 
   return (
@@ -141,23 +173,15 @@ export function PaymentScreen({ navigation, route }: Props) {
       footer={
         <BottomActionBar>
           <Button
-            disabled={collectibleAmount <= 0}
+            disabled={collectibleAmount <= 0 || isSubmitting}
             onPress={handlePrimaryAction}
             title={`${formatCurrency(currentCollectibleAmount)} Tahsil Et`}
           />
         </BottomActionBar>
       }
     >
-      <SectionHeader
-        align="center"
-        leading={
-          <BackButton onPress={() => navigation.goBack()} />
-        }
-        subtitle={formatTableLabel(currentTable.label)}
-        title="Ödeme"
-      />
-
       <SurfaceCard elevated style={styles.summaryCard}>
+        <Text style={styles.tableLabel}>{formatTableLabel(currentTable.label)}</Text>
         <Text style={styles.sectionTitle}>Sipariş Özeti</Text>
         <InfoRow
           label="Ara Toplam"
@@ -210,25 +234,6 @@ export function PaymentScreen({ navigation, route }: Props) {
   );
 }
 
-function BackButton({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityLabel="Ödemeden geri dön"
-      accessibilityRole="button"
-      android_ripple={{ color: "rgba(39,48,67,0.06)", radius: 20 }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.backButton,
-        pressed ? styles.navButtonPressed : null,
-      ]}
-    >
-      <View style={styles.backArrowStem} />
-      <View style={[styles.backArrowHead, styles.backArrowHeadTop]} />
-      <View style={[styles.backArrowHead, styles.backArrowHeadBottom]} />
-    </Pressable>
-  );
-}
-
 function CardIcon() {
   return (
     <View style={styles.methodIconFrame}>
@@ -262,38 +267,6 @@ function SplitIcon() {
 }
 
 const styles = StyleSheet.create({
-  backArrowHead: {
-    borderColor: colors.textPrimary,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    height: 8,
-    left: 8,
-    position: "absolute",
-    width: 8,
-  },
-  backArrowHeadBottom: {
-    top: 14,
-    transform: [{ rotate: "-45deg" }],
-  },
-  backArrowHeadTop: {
-    top: 8,
-    transform: [{ rotate: "-135deg" }],
-  },
-  backArrowStem: {
-    backgroundColor: colors.textPrimary,
-    borderRadius: radii.pill,
-    height: 2,
-    left: 10,
-    position: "absolute",
-    top: 16,
-    width: 12,
-  },
-  backButton: {
-    borderRadius: radii.pill,
-    height: 32,
-    position: "relative",
-    width: 32,
-  },
   cardOutline: {
     borderColor: colors.info,
     borderRadius: 4,
@@ -334,8 +307,8 @@ const styles = StyleSheet.create({
     width: 20,
   },
   content: {
-    gap: spacing.lg,
-    paddingTop: spacing.sm,
+    gap: spacing.sm,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.xl,
   },
   copy: {
@@ -351,24 +324,28 @@ const styles = StyleSheet.create({
     width: 20,
   },
   methodsSection: {
-    marginTop: spacing.xs,
+    marginTop: 0,
   },
   methodsTitle: {
     color: colors.textPrimary,
-    fontSize: 20,
-    fontWeight: typography.heading.fontWeight,
-    lineHeight: 28,
+    fontSize: typography.subtitle.fontSize,
+    fontWeight: typography.subtitle.fontWeight,
+    lineHeight: typography.subtitle.lineHeight,
     marginBottom: spacing.md,
-  },
-  navButtonPressed: {
-    opacity: 0.9,
   },
   sectionTitle: {
     color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: typography.heading.fontWeight,
-    lineHeight: 24,
+    fontSize: typography.subtitle.fontSize,
+    fontWeight: typography.subtitle.fontWeight,
+    lineHeight: typography.subtitle.lineHeight,
     marginBottom: spacing.md,
+  },
+  tableLabel: {
+    color: colors.textSecondary,
+    fontSize: typography.body.fontSize,
+    fontWeight: typography.bodyStrong.fontWeight,
+    lineHeight: typography.body.lineHeight,
+    marginBottom: spacing.sm,
   },
   splitLine: {
     backgroundColor: colors.purple,

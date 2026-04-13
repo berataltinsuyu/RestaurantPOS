@@ -23,13 +23,21 @@ export class TablesService {
 
   async listTables() {
     if (!this.readGateway?.isConfigured) {
-      return this.gateway.listTables();
+      console.warn("[TablesService] Supabase tables read gateway is not configured.");
+      return [];
     }
 
     const tableRows = await this.readGateway.listRestaurantTables();
-    const currentBillIds = tableRows
-      .map((table) => table.CurrentBillId)
-      .filter((billId): billId is number => billId !== null);
+    console.info("[TablesService] RestaurantTables snapshot received.", {
+      rowCount: tableRows.length,
+    });
+    const currentBillIds = Array.from(
+      new Set(
+        tableRows
+          .map((table) => table.CurrentBillId)
+          .filter((billId): billId is number => billId !== null),
+      ),
+    );
     const billRows = currentBillIds.length && this.billsReadGateway
       ? await this.billsReadGateway.listBillsByIds(currentBillIds)
       : [];
@@ -47,7 +55,10 @@ export class TablesService {
 
   async getTable(tableId: string) {
     if (!this.readGateway?.isConfigured) {
-      return this.gateway.getTable(tableId);
+      console.warn("[TablesService] Supabase table detail read gateway is not configured.", {
+        tableId,
+      });
+      return null;
     }
 
     const tableNumericId = Number(tableId);

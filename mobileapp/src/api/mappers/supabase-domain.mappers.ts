@@ -17,6 +17,11 @@ export function mapRestaurantTableRecordToTableSummary(
   table: RestaurantTableRecord,
   activeBill?: BillRecord | null,
 ): TableSummary {
+  const normalizedLabel =
+    /^masa\b/i.test(table.TableNo) || /^m[-\s]?\d/i.test(table.TableNo)
+      ? table.TableNo
+      : `Masa ${table.TableNo}`;
+
   return {
     activeOrderId:
       table.CurrentBillId !== null ? String(table.CurrentBillId) : undefined,
@@ -24,7 +29,7 @@ export function mapRestaurantTableRecordToTableSummary(
     assignedWaiterName: undefined,
     guestCount: activeBill?.CustomerCount ?? table.CurrentGuestCount,
     id: String(table.Id),
-    label: `Table ${table.TableNo}`,
+    label: normalizedLabel,
     seats: table.Capacity,
     status: mapRestaurantTableStatusCode(table.Status),
     totalAmount: activeBill?.TotalAmount ?? 0,

@@ -35,13 +35,23 @@ export function TableCard({
   const tone = toneByStatus[table.status];
   const palette = tonePalette[tone];
   const isEmpty = table.status === "empty";
+  const handleCardPress = isEmpty ? onOpen : onPress;
+  const safeTotalAmount = Number.isFinite(table.totalAmount)
+    ? table.totalAmount
+    : 0;
+
+  if (!Number.isFinite(table.totalAmount)) {
+    console.warn("[TableCard] Table contains an invalid totalAmount. Falling back to 0.", {
+      table,
+    });
+  }
 
   return (
     <Pressable
       accessibilityRole="button"
       android_ripple={{ color: "rgba(39,48,67,0.05)" }}
-      disabled={isEmpty || !onPress}
-      onPress={onPress}
+      disabled={!handleCardPress}
+      onPress={handleCardPress}
       style={({ pressed }) => [
         styles.card,
         {
@@ -68,17 +78,9 @@ export function TableCard({
       {isEmpty ? (
         <View style={styles.emptyBody}>
           <Text style={styles.emptyLabel}>Müsait</Text>
-          <Pressable
-            accessibilityRole="button"
-            android_ripple={{ color: "rgba(214,169,55,0.12)" }}
-            onPress={onOpen}
-            style={({ pressed }) => [
-              styles.emptyPill,
-              pressed ? styles.emptyPillPressed : null,
-            ]}
-          >
-            <Text style={styles.emptyPillText}>+ Aç</Text>
-          </Pressable>
+          <View style={styles.emptyPill}>
+            <Text style={styles.emptyPillText}>Masa Aç</Text>
+          </View>
         </View>
       ) : (
         <View style={styles.detailsBody}>
@@ -94,9 +96,7 @@ export function TableCard({
           <View style={styles.divider} />
 
           <Text style={styles.amountLabel}>Tutar</Text>
-          <Text style={styles.amountValue}>
-            {formatCurrency(table.totalAmount)}
-          </Text>
+          <Text style={styles.amountValue}>{formatCurrency(safeTotalAmount)}</Text>
         </View>
       )}
     </Pressable>
@@ -146,7 +146,6 @@ const styles = StyleSheet.create({
     minHeight: 170,
     overflow: "hidden",
     padding: spacing.md,
-    width: "48.2%",
   },
   detailsBody: {
     flex: 1,

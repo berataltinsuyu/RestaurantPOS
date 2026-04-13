@@ -51,9 +51,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     marginBottom: spacing.md,
-    minHeight: 88,
+    minHeight: 92,
     overflow: "hidden",
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
   copyBlock: {

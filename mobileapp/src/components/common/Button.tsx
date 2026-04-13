@@ -80,7 +80,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     borderWidth: 1,
     justifyContent: "center",
-    marginBottom: spacing.sm,
     overflow: "hidden",
     paddingHorizontal: spacing.lg,
   },

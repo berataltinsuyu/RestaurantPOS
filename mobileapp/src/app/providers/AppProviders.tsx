@@ -9,7 +9,7 @@ import { navigationTheme } from "../../theme";
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ flex: 1 }}>
       <NavigationContainer
         theme={{
           ...NavigationDefaultTheme,

@@ -1,21 +1,23 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+import { getBackendErrorMessage } from "../../../api/http/api-client";
 import { BottomActionBar } from "../../../components/common/BottomActionBar";
 import { Button } from "../../../components/common/Button";
 import { Screen } from "../../../components/common/Screen";
-import { SectionHeader } from "../../../components/common/SectionHeader";
 import { SurfaceCard } from "../../../components/common/SurfaceCard";
 import {
   formatCurrency,
-  formatTableLabel,
   getOrderPaymentSummary,
 } from "../../../constants/formatters";
 import { useBillRealtimeSync } from "../../../hooks/useBillRealtimeSync";
@@ -42,31 +44,21 @@ const PROCESSING_DELAY_MS = 1200;
 
 export function ContactlessPromptScreen({ navigation, route }: Props) {
   const { paymentIntentId, tableId } = route.params;
+  const { height } = useWindowDimensions();
   useBillRealtimeSync(tableId);
+  const confirmationLockRef = useRef(false);
   const [status, setStatus] = useState<ContactlessStatus>("waiting");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const table = useAppStore((state) =>
-    state.tables.find((candidate) => candidate.id === tableId),
-  );
+  const pulseAnimation = useRef(new Animated.Value(0)).current;
   const order = useAppStore((state) => state.ordersByTableId[tableId]);
   const paymentIntent = useAppStore((state) => state.paymentIntent);
   const clearPaymentIntent = useAppStore((state) => state.clearPaymentIntent);
-  const appendSplitPayment = useAppStore((state) => state.appendSplitPayment);
-  const upsertOrder = useAppStore((state) => state.upsertOrder);
-  const upsertTable = useAppStore((state) => state.upsertTable);
   const updatePaymentIntentStatus = useAppStore(
     (state) => state.updatePaymentIntentStatus,
   );
   const paymentSummary = order ? getOrderPaymentSummary(order) : null;
 
   const payableAmount = paymentIntent?.amount ?? paymentSummary?.total ?? 0;
-  const settledTotal = useMemo(
-    () =>
-      paymentIntent?.method === "split"
-        ? paymentSummary?.total ?? order?.total ?? 0
-        : payableAmount,
-    [order?.total, payableAmount, paymentIntent?.method, paymentSummary?.total],
-  );
 
   useEffect(() => {
     updatePaymentIntentStatus("awaitingContactless");
@@ -78,7 +70,7 @@ export function ContactlessPromptScreen({ navigation, route }: Props) {
     const timer = setTimeout(() => {
       setStatus("error");
       setErrorMessage(
-        "Temassız okuma zaman aşımına uğradı. Kartı yeniden okutun veya başka ödeme yöntemine dönün.",
+        "Temassız okuma zaman aşımına uğradı. Kartı tekrar yaklaştırın; gerekirse kartı çip ile takarak deneyin veya başka ödeme yöntemine geçin.",
       );
       updatePaymentIntentStatus("failed");
     }, WAIT_TIMEOUT_MS);
@@ -88,14 +80,63 @@ export function ContactlessPromptScreen({ navigation, route }: Props) {
     };
   }, [status, updatePaymentIntentStatus]);
 
-  async function handleCardRead() {
-    if (status === "processing") {
+  useEffect(() => {
+    if (status !== "waiting") {
+      pulseAnimation.stopAnimation();
+      pulseAnimation.setValue(0);
       return;
     }
 
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnimation, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnimation, {
+          toValue: 0,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+      pulseAnimation.stopAnimation();
+    };
+  }, [pulseAnimation, status]);
+
+  async function handleCardRead() {
+    if (status !== "waiting") {
+      console.info("[ContactlessPromptScreen] Card confirmation ignored because status is not waiting.", {
+        status,
+        tableId,
+      });
+      return;
+    }
+
+    if (confirmationLockRef.current) {
+      console.info("[ContactlessPromptScreen] Duplicate card confirmation prevented.", {
+        paymentIntentId,
+        tableId,
+      });
+      return;
+    }
+
+    confirmationLockRef.current = true;
     setStatus("processing");
     setErrorMessage(null);
     updatePaymentIntentStatus("awaitingContactless");
+    console.info("[ContactlessPromptScreen] Card confirmation started.", {
+      paymentIntentId,
+      tableId,
+    });
 
     try {
       await delay(PROCESSING_DELAY_MS);
@@ -103,38 +144,9 @@ export function ContactlessPromptScreen({ navigation, route }: Props) {
         paymentIntentId,
       });
 
-      if (paymentIntent?.method === "split") {
-        appendSplitPayment(tableId, {
-          amount: receipt.amount,
-          id: `split-payment-card-${Date.now()}`,
-          isCommitted: true,
-          itemIds: [],
-          method: "card",
-          source: "amount",
-        });
-      }
-
       updatePaymentIntentStatus("completed");
       clearPaymentIntent();
-
-      if (order) {
-        upsertOrder({
-          ...order,
-          status: "paid",
-          tax: paymentSummary?.serviceFee ?? order.tax,
-          total: settledTotal,
-          updatedAt: new Date().toISOString(),
-        });
-      }
-
-      if (table && order) {
-        upsertTable({
-          ...table,
-          status: "paid",
-          totalAmount: settledTotal,
-          updatedAt: new Date().toISOString(),
-        });
-      }
+      await services.sync.refreshAfterMutation(tableId);
 
       navigation.replace(ROUTES.PAYMENT_SUCCESS, {
         amount: receipt.amount,
@@ -142,22 +154,37 @@ export function ContactlessPromptScreen({ navigation, route }: Props) {
         receiptId: receipt.receiptId,
         tableId,
       });
-    } catch {
-      setStatus("error");
-      setErrorMessage(
-        "POS cihazı banka onayı alamadı. Kartı tekrar okutun veya başka ödeme yöntemini seçin.",
+    } catch (error) {
+      console.error("[ContactlessPromptScreen] Card confirmation failed.", error);
+      const detail = getBackendErrorMessage(
+        error,
+        "Temassız işlem tamamlanamadı. Kartı tekrar yaklaştırın; olmazsa kartı çip ile takarak deneyin veya başka bir ödeme yöntemi seçin.",
       );
+      setStatus("error");
+      setErrorMessage(detail);
       updatePaymentIntentStatus("failed");
+      confirmationLockRef.current = false;
+    } finally {
+      console.info("[ContactlessPromptScreen] Card confirmation finished.", {
+        status: paymentIntent?.status ?? null,
+        tableId,
+      });
     }
   }
 
   function handleRetry() {
+    console.info("[ContactlessPromptScreen] Card confirmation retry requested.", {
+      paymentIntentId,
+      tableId,
+    });
+    confirmationLockRef.current = false;
     setStatus("waiting");
     setErrorMessage(null);
     updatePaymentIntentStatus("awaitingContactless");
   }
 
   function handleCancel() {
+    confirmationLockRef.current = false;
     updatePaymentIntentStatus("cancelled");
     clearPaymentIntent();
 
@@ -170,110 +197,284 @@ export function ContactlessPromptScreen({ navigation, route }: Props) {
   }
 
   const helperTone = status === "error" ? "danger" : "info";
+  const hasFooter = status === "error";
+  const isCompactLayout = height <= 860 || hasFooter;
+  const isVeryCompactLayout = height <= 760 || (hasFooter && height <= 820);
+  const isUltraCompactLayout = height <= 680 || (hasFooter && height <= 740);
   const helperCopy =
     status === "processing"
       ? "Kart bilgileri okunuyor. POS cihazı banka onayını bekliyor."
       : status === "error"
         ? errorMessage ??
-          "İşlem tamamlanamadı. Yeniden deneyin veya başka ödeme yöntemini seçin."
-        : "Kartınızı POS cihazına yaklaştırın. İşlem otomatik olarak başlayacaktır.";
+          "Temassız ödeme tamamlanamadı. Kartı tekrar yaklaştırın veya kartı çip ile takarak deneyin."
+        : "Kartınızı POS cihazına yaklaştırın. Temas algılanınca işlem otomatik olarak başlayacaktır.";
+  const pulseStyle = {
+    opacity:
+      status === "waiting"
+        ? pulseAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.84, 1],
+          })
+        : 1,
+    transform: [
+      {
+        scale:
+          status === "waiting"
+            ? pulseAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 1.08],
+              })
+            : 1,
+      },
+    ],
+  };
+  const footer =
+    hasFooter ? (
+      <BottomActionBar style={styles.footer}>
+        <Button
+          fullWidth={false}
+          onPress={handleCancel}
+          style={styles.secondaryAction}
+          title="Başka Yöntem"
+          variant="secondary"
+        />
+        <Button
+          fullWidth={false}
+          onPress={handleRetry}
+          style={styles.primaryAction}
+          title="Tekrar Dene"
+        />
+      </BottomActionBar>
+    ) : undefined;
+  const heroSize = isUltraCompactLayout
+    ? 132
+    : isVeryCompactLayout
+      ? 148
+      : isCompactLayout
+        ? 164
+        : 188;
+  const heroBadgeSize = isUltraCompactLayout
+    ? 72
+    : isVeryCompactLayout
+      ? 80
+      : isCompactLayout
+        ? 88
+        : 96;
 
   return (
     <Screen
       contentContainerStyle={styles.content}
-      footer={
-        <BottomActionBar style={styles.footer}>
-          {status === "processing" ? (
-            <Button disabled title="Banka Onayı Bekleniyor" />
-          ) : status === "error" ? (
-            <>
-              <Button
-                fullWidth={false}
-                onPress={handleCancel}
-                style={styles.secondaryAction}
-                title="Başka Yöntem"
-                variant="secondary"
-              />
-              <Button
-                fullWidth={false}
-                onPress={handleRetry}
-                style={styles.primaryAction}
-                title="Tekrar Dene"
-              />
-            </>
-          ) : (
-            <>
-              <Button
-                fullWidth={false}
-                onPress={handleCancel}
-                style={styles.secondaryAction}
-                title="İptal"
-                variant="secondary"
-              />
-              <Button
-                fullWidth={false}
-                onPress={handleCardRead}
-                style={styles.primaryAction}
-                title="Kart Okutuldu"
-              />
-            </>
-          )}
-        </BottomActionBar>
-      }
+      footer={footer}
+      includeTopSafeArea
       scroll={false}
     >
-      <SectionHeader
-        align="center"
-        leading={<BackButton onPress={handleCancel} />}
-        subtitle={table ? formatTableLabel(table.label) : tableId}
-        title="Kart Ödeme"
-      />
+      <View
+        style={[
+          styles.navRow,
+          isUltraCompactLayout
+            ? styles.navRowUltraCompact
+            : isVeryCompactLayout
+              ? styles.navRowCompact
+              : null,
+        ]}
+      >
+        <BackButton onPress={handleCancel} />
+      </View>
 
-      <View style={styles.main}>
-        <View style={styles.heroHalo}>
-          <View style={styles.heroBadge}>
-            <CardIcon />
-          </View>
-        </View>
+      <View
+        style={[
+          styles.main,
+          isUltraCompactLayout
+            ? styles.mainUltraCompact
+            : isVeryCompactLayout
+              ? styles.mainVeryCompact
+              : isCompactLayout
+                ? styles.mainCompact
+                : null,
+        ]}
+      >
+        <View
+          style={[
+            styles.topSection,
+            isUltraCompactLayout
+              ? styles.topSectionUltraCompact
+              : isVeryCompactLayout
+                ? styles.topSectionCompact
+                : null,
+          ]}
+        >
+          {status === "waiting" ? (
+            <Pressable
+              accessibilityLabel="Temassız kart okutma alanı"
+              accessibilityRole="button"
+              android_ripple={{ color: "rgba(75,123,255,0.10)", radius: 120 }}
+              onPress={handleCardRead}
+              style={({ pressed }) => [
+                styles.heroPressable,
+                isUltraCompactLayout
+                  ? styles.heroPressableUltraCompact
+                  : isVeryCompactLayout
+                    ? styles.heroPressableCompact
+                    : null,
+                pressed ? styles.heroPressablePressed : null,
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.heroHalo,
+                  {
+                    height: heroSize,
+                    width: heroSize,
+                  },
+                  pulseStyle,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.heroBadge,
+                    {
+                      height: heroBadgeSize,
+                      width: heroBadgeSize,
+                    },
+                  ]}
+                >
+                  <CardIcon />
+                </View>
+              </Animated.View>
+            </Pressable>
+          ) : (
+            <Animated.View
+              style={[
+                styles.heroHalo,
+                {
+                  height: heroSize,
+                  width: heroSize,
+                },
+                pulseStyle,
+              ]}
+            >
+              <View
+                style={[
+                  styles.heroBadge,
+                  {
+                    height: heroBadgeSize,
+                    width: heroBadgeSize,
+                  },
+                ]}
+              >
+                <CardIcon />
+              </View>
+            </Animated.View>
+          )}
 
-        <Text style={styles.title}>Temassız kart okutun</Text>
-        <Text style={styles.subtitle}>
-          Kartınızı POS cihazına yaklaştırın veya yerleştirin.
-        </Text>
-
-        <SurfaceCard elevated style={styles.amountCard}>
-          <Text style={styles.amountLabel}>Ödenecek Tutar</Text>
-          <Text style={styles.amountValue}>{formatCurrency(payableAmount)}</Text>
-        </SurfaceCard>
-
-        <View style={styles.contactlessRow}>
-          <ContactlessIcon />
-          <Text style={styles.contactlessLabel}>Temassız Ödeme</Text>
-        </View>
-
-        <SurfaceCard style={styles.helperCard} tone={helperTone}>
+          <Text style={[styles.title, isCompactLayout ? styles.titleCompact : null]}>
+            Temassız kart okutun
+          </Text>
           <Text
             style={[
-              styles.helperCopy,
-              status === "error" ? styles.helperCopyError : null,
+              styles.subtitle,
+              isUltraCompactLayout
+                ? styles.subtitleUltraCompact
+                : isCompactLayout
+                  ? styles.subtitleCompact
+                  : null,
             ]}
           >
-            {helperCopy}
+            Kartınızı POS cihazına yaklaştırın veya yerleştirin.
           </Text>
-        </SurfaceCard>
 
-        {status === "processing" ? (
-          <View style={styles.processingRow}>
-            <ActivityIndicator color={colors.primary} size="small" />
-            <Text style={styles.processingLabel}>İşlem devam ediyor</Text>
+          <SurfaceCard
+            elevated
+            style={[
+              styles.amountCard,
+              isUltraCompactLayout
+                ? styles.amountCardUltraCompact
+                : isCompactLayout
+                  ? styles.amountCardCompact
+                  : null,
+            ]}
+          >
+            <Text style={styles.amountLabel}>Ödenecek Tutar</Text>
+            <Text style={styles.amountValue}>{formatCurrency(payableAmount)}</Text>
+          </SurfaceCard>
+        </View>
+
+        <View
+          style={[
+            styles.bottomSection,
+            isUltraCompactLayout
+              ? styles.bottomSectionUltraCompact
+              : isCompactLayout
+                ? styles.bottomSectionCompact
+                : null,
+          ]}
+        >
+          <View
+            style={[
+              styles.contactlessRow,
+              isUltraCompactLayout
+                ? styles.contactlessRowUltraCompact
+                : isCompactLayout
+                  ? styles.contactlessRowCompact
+                  : null,
+            ]}
+          >
+            <ContactlessIcon />
+            <Text style={styles.contactlessLabel}>Temassız Ödeme</Text>
           </View>
-        ) : null}
 
-        <SurfaceCard style={styles.providerCard}>
-          <Text style={styles.providerCopy}>
-            İşlem güvenli POS sistemi üzerinden gerçekleştirilmektedir.
-          </Text>
-        </SurfaceCard>
+          <SurfaceCard
+            style={[
+              styles.helperCard,
+              isUltraCompactLayout
+                ? styles.helperCardUltraCompact
+                : isCompactLayout
+                  ? styles.helperCardCompact
+                  : null,
+            ]}
+            tone={helperTone}
+          >
+            <Text
+              style={[
+                styles.helperCopy,
+                status === "error" ? styles.helperCopyError : null,
+              ]}
+            >
+              {helperCopy}
+            </Text>
+          </SurfaceCard>
+
+          {status === "processing" ? (
+            <View
+              style={[
+                styles.processingRow,
+                isUltraCompactLayout
+                  ? styles.processingRowUltraCompact
+                  : isCompactLayout
+                    ? styles.processingRowCompact
+                    : null,
+              ]}
+            >
+              <ActivityIndicator color={colors.primary} size="small" />
+              <Text style={styles.processingLabel}>İşlem devam ediyor</Text>
+            </View>
+          ) : null}
+
+          <SurfaceCard
+            style={[
+              styles.providerCard,
+              isUltraCompactLayout
+                ? styles.providerCardUltraCompact
+                : isCompactLayout
+                  ? styles.providerCardCompact
+                  : null,
+            ]}
+          >
+            <Text style={styles.providerCopy}>
+              İşlem güvenli POS sistemi üzerinden gerçekleştirilmektedir.
+            </Text>
+          </SurfaceCard>
+        </View>
       </View>
     </Screen>
   );
@@ -328,10 +529,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderColor: colors.infoMuted,
     borderWidth: 1.5,
-    marginBottom: spacing.lg,
+    marginBottom: 0,
+    maxWidth: 272,
     minWidth: 236,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
+    width: "78%",
+  },
+  amountCardCompact: {
+    minWidth: 220,
+    paddingVertical: spacing.md,
+  },
+  amountCardUltraCompact: {
+    minWidth: 204,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   amountLabel: {
     color: colors.textSecondary,
@@ -408,7 +620,11 @@ const styles = StyleSheet.create({
   contactlessRow: {
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: spacing.lg,
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  contactlessRowCompact: {
+    marginBottom: spacing.xs,
   },
   contactlessWave: {
     borderColor: colors.info,
@@ -431,15 +647,28 @@ const styles = StyleSheet.create({
     width: 5,
   },
   content: {
-    paddingBottom: spacing.xl,
+    paddingBottom: 0,
+    paddingTop: 0,
   },
   footer: {
     flexDirection: "row",
     gap: spacing.sm,
+    paddingBottom: 0,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xxs,
   },
   helperCard: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
     minWidth: "100%",
+    paddingVertical: spacing.md,
+  },
+  helperCardCompact: {
+    marginBottom: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+  helperCardUltraCompact: {
+    marginBottom: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   helperCopy: {
     color: colors.infoContrast,
@@ -455,18 +684,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#C0D6FF",
     borderRadius: radii.pill,
-    height: 112,
     justifyContent: "center",
-    width: 112,
   },
   heroHalo: {
     alignItems: "center",
     backgroundColor: "rgba(220,232,255,0.46)",
     borderRadius: radii.pill,
-    height: 220,
     justifyContent: "center",
-    marginBottom: spacing.md,
-    width: 220,
+    marginBottom: spacing.sm,
+  },
+  heroPressable: {
+    borderRadius: radii.pill,
+  },
+  heroPressableCompact: {
+    marginBottom: spacing.xxs,
+  },
+  heroPressablePressed: {
+    opacity: 0.96,
+  },
+  heroPressableUltraCompact: {
+    marginBottom: 0,
   },
   iconFrame: {
     alignItems: "center",
@@ -476,10 +713,54 @@ const styles = StyleSheet.create({
     width: 44,
   },
   main: {
-    alignItems: "center",
+    alignItems: "stretch",
     flex: 1,
+    justifyContent: "flex-start",
+    minHeight: 0,
+    paddingBottom: 0,
+    paddingTop: 0,
+  },
+  mainCompact: {
+    paddingBottom: 0,
+  },
+  mainUltraCompact: {
+    paddingBottom: 0,
+  },
+  mainVeryCompact: {
+    paddingTop: 0,
+  },
+  navRow: {
+    alignItems: "flex-start",
     justifyContent: "center",
-    paddingBottom: spacing.lg,
+    marginBottom: spacing.sm,
+    minHeight: 32,
+  },
+  navRowCompact: {
+    marginBottom: spacing.xs,
+  },
+  navRowUltraCompact: {
+    marginBottom: spacing.xxs,
+  },
+  topSection: {
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  topSectionCompact: {
+    marginBottom: spacing.xxs,
+  },
+  topSectionUltraCompact: {
+    marginBottom: 0,
+  },
+  bottomSection: {
+    flexShrink: 1,
+    marginTop: spacing.md,
+    width: "100%",
+  },
+  bottomSectionCompact: {
+    marginTop: spacing.sm,
+  },
+  bottomSectionUltraCompact: {
+    marginTop: spacing.xs,
   },
   navButtonPressed: {
     opacity: 0.88,
@@ -497,14 +778,27 @@ const styles = StyleSheet.create({
   processingRow: {
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: spacing.lg,
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  processingRowCompact: {
+    marginBottom: spacing.xs,
+  },
+  processingRowUltraCompact: {
+    marginBottom: spacing.xxs,
   },
   providerCard: {
     backgroundColor: colors.surfaceSubtle,
     borderColor: colors.borderSoft,
     marginBottom: 0,
     minWidth: "100%",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  providerCardCompact: {
+    paddingVertical: spacing.xs,
+  },
+  providerCardUltraCompact: {
+    paddingVertical: spacing.xxs,
   },
   providerCopy: {
     color: colors.textSecondary,
@@ -521,8 +815,14 @@ const styles = StyleSheet.create({
     fontSize: typography.subtitle.fontSize,
     fontWeight: typography.body.fontWeight,
     lineHeight: typography.subtitle.lineHeight,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.sm,
     textAlign: "center",
+  },
+  subtitleCompact: {
+    marginBottom: spacing.sm,
+  },
+  subtitleUltraCompact: {
+    marginBottom: spacing.xs,
   },
   title: {
     color: colors.textPrimary,
@@ -531,5 +831,12 @@ const styles = StyleSheet.create({
     lineHeight: typography.title.lineHeight,
     marginBottom: spacing.xs,
     textAlign: "center",
+  },
+  titleCompact: {
+    fontSize: typography.heading.fontSize,
+    lineHeight: typography.heading.lineHeight,
+  },
+  contactlessRowUltraCompact: {
+    marginBottom: spacing.xxs,
   },
 });

@@ -32,7 +32,7 @@ export function OrderDetailScreen({ navigation, route }: Props) {
     return (
       <Screen>
         <SurfaceCard>
-          <Text style={styles.emptyCopy}>Table context is missing.</Text>
+          <Text style={styles.emptyCopy}>Masa bilgisi bulunamadı.</Text>
         </SurfaceCard>
       </Screen>
     );
@@ -48,7 +48,7 @@ export function OrderDetailScreen({ navigation, route }: Props) {
               navigation.navigate(ROUTES.MENU_SELECTION, { tableId: table.id })
             }
             style={styles.bottomButton}
-            title="Urun Ekle"
+            title="Ürün Ekle"
             variant="secondary"
           />
           <Button
@@ -58,22 +58,22 @@ export function OrderDetailScreen({ navigation, route }: Props) {
               navigation.navigate(ROUTES.PAYMENT, { tableId: table.id })
             }
             style={styles.bottomButton}
-            title="Odeme"
+            title="Ödemeye Geç"
           />
         </BottomActionBar>
       }
     >
       <SectionHeader
-        eyebrow="Order Detail"
+        eyebrow="Sipariş Detayı"
         right={
           order ? <StatusChip label={order.status} status={order.status} /> : null
         }
-        subtitle="Order detail stays focused on waiter actions: review lines, add products, and move into payment."
-        title={`${table.label} order`}
+        subtitle="Siparişi gözden geçirin, ürün ekleyin ve ödeme adımına geçin."
+        title={table.label}
       />
 
       <SurfaceCard elevated>
-        <Text style={styles.sectionTitle}>Current order lines</Text>
+        <Text style={styles.sectionTitle}>Sipariş Kalemleri</Text>
         {order?.items.length ? (
           order.items.map((item) => (
             <View key={item.id} style={styles.orderRow}>
@@ -90,17 +90,17 @@ export function OrderDetailScreen({ navigation, route }: Props) {
           ))
         ) : (
           <Text style={styles.emptyCopy}>
-            No order lines yet. The menu selection flow can start the first
-            order for this table.
+            Henüz ürün eklenmedi. Bu masa için ilk siparişi ürün seçimi
+            ekranından başlatabilirsiniz.
           </Text>
         )}
       </SurfaceCard>
 
       <SurfaceCard tone="brand">
-        <Text style={styles.sectionTitle}>Waiter flow note</Text>
+        <Text style={styles.sectionTitle}>İşlem Notu</Text>
         <Text style={styles.emptyCopy}>
-          Split payment and final editing controls stay as dedicated waiter
-          flows. This screen anchors the order context before those actions.
+          Bölünmüş ödeme ve son düzenleme işlemleri bu sipariş üzerinden devam
+          eder. Sipariş bağlamı bu ekranda korunur.
         </Text>
       </SurfaceCard>
     </Screen>

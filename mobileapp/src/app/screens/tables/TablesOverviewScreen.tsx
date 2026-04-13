@@ -1,21 +1,17 @@
 import React, { useMemo, useState } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+import { getBackendErrorMessage } from "../../../api/http/api-client";
 import { Button } from "../../../components/common/Button";
 import { FilterChip } from "../../../components/common/FilterChip";
 import { Screen } from "../../../components/common/Screen";
-import { SectionHeader } from "../../../components/common/SectionHeader";
 import { SurfaceCard } from "../../../components/common/SurfaceCard";
 import { ROUTES } from "../../../constants/routes";
 import { useTablesRealtimeSync } from "../../../hooks/useTablesRealtimeSync";
 import { RootStackParamList } from "../../../navigation/types";
+import { services } from "../../../services/composition-root";
 import { useAppStore } from "../../../state/app-store";
 import {
   colors,
@@ -33,6 +29,7 @@ type Props = NativeStackScreenProps<
 >;
 
 type TableFilter = "all" | "empty" | "occupied" | "paymentPending";
+type TableActionMode = "open" | "move" | "merge" | "split";
 
 export function TablesOverviewScreen({ navigation }: Props) {
   useTablesRealtimeSync();
@@ -41,20 +38,23 @@ export function TablesOverviewScreen({ navigation }: Props) {
   const [isActionSheetVisible, setIsActionSheetVisible] = useState(false);
   const session = useAppStore((state) => state.session);
   const tables = useAppStore((state) => state.tables);
+  const clearSession = useAppStore((state) => state.clearSession);
 
   const filteredTables = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return tables.filter((table) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        table.label.toLowerCase().includes(normalizedQuery) ||
-        (table.areaLabel?.toLowerCase().includes(normalizedQuery) ?? false);
-      const matchesFilter =
-        activeFilter === "all" ? true : table.status === activeFilter;
+    return [...tables]
+      .sort(compareTablesByNumericLabel)
+      .filter((table) => {
+        const matchesQuery =
+          !normalizedQuery ||
+          table.label.toLowerCase().includes(normalizedQuery) ||
+          (table.areaLabel?.toLowerCase().includes(normalizedQuery) ?? false);
+        const matchesFilter =
+          activeFilter === "all" ? true : table.status === activeFilter;
 
-      return matchesQuery && matchesFilter;
-    });
+        return matchesQuery && matchesFilter;
+      });
   }, [activeFilter, query, tables]);
 
   const counts = useMemo(
@@ -68,12 +68,15 @@ export function TablesOverviewScreen({ navigation }: Props) {
     [tables],
   );
 
-  const defaultActionTableId =
-    filteredTables[0]?.id ?? tables[0]?.id ?? "table-1";
-  const waiterLabel = session?.waiterName ?? "Ahmet Yılmaz";
-  const roleLabel = "Garson";
+  const waiterSubtitle = session
+    ? `${session.waiterName} - Garson`
+    : "Aktif garson oturumu";
 
   function openTableActionsSheet() {
+    if (!tables.length) {
+      return;
+    }
+
     setIsActionSheetVisible(true);
   }
 
@@ -81,25 +84,87 @@ export function TablesOverviewScreen({ navigation }: Props) {
     setIsActionSheetVisible(false);
   }
 
-  function navigateToTableActions() {
+  function navigateToTableActions(initialAction?: TableActionMode) {
     closeTableActionsSheet();
-    navigation.navigate(ROUTES.TABLE_ACTIONS, {
-      tableId: defaultActionTableId,
-    });
+    navigation.navigate(ROUTES.TABLE_ACTIONS, initialAction ? { initialAction } : undefined);
   }
 
-  function handleOpenEmptyTable(tableId: string) {
-    navigation.navigate(ROUTES.TABLE_ACTIONS, { tableId });
+  async function handleOpenEmptyTable(tableId: string) {
+    const currentTable = tables.find((table) => table.id === tableId);
+
+    if (!currentTable || currentTable.status !== "empty") {
+      return;
+    }
+
+    try {
+      console.info("[TablesOverviewScreen] Direct empty-table open requested.", {
+        tableId: currentTable.id,
+      });
+      await services.tables.openTable({
+        guestCount: currentTable.guestCount || 2,
+        tableId: currentTable.id,
+        waiterId: session?.waiterId ?? "",
+      });
+      await services.sync.refreshAfterMutation(currentTable.id);
+      navigation.navigate(ROUTES.ORDER_DETAIL, { tableId: currentTable.id });
+    } catch (error) {
+      console.error("[TablesOverviewScreen] Open table failed.", error);
+      const detail = getBackendErrorMessage(
+        error,
+        "İşlem backend üzerinde tamamlanamadı. Lütfen tekrar deneyin.",
+      );
+      Alert.alert(
+        "Masa açılamadı",
+        detail,
+      );
+    }
+  }
+
+  function handleLogout() {
+    services.backend.clearSession();
+    clearSession();
+    navigation.replace(ROUTES.LOGIN);
   }
 
   return (
-    <Screen contentContainerStyle={styles.content}>
-      <SectionHeader
-        leading={<BrandMark />}
-        right={<MenuButton onPress={openTableActionsSheet} />}
-        subtitle={`${waiterLabel} - ${roleLabel}`}
-        title="Masa Planı"
-      />
+    <Screen contentContainerStyle={styles.content} includeTopSafeArea>
+      <View style={styles.infoRow}>
+        <View style={styles.infoLeftCluster}>
+          <BrandMark />
+          <View style={styles.waiterBlock}>
+            <View style={styles.waiterRow}>
+              <Text numberOfLines={1} style={styles.waiterName}>
+                {waiterSubtitle}
+              </Text>
+              <Pressable
+                accessibilityHint="Garson oturumunu kapatır ve giriş ekranına döner"
+                accessibilityLabel="Garson değiştir"
+                accessibilityRole="button"
+                android_ripple={{ color: "rgba(214,169,55,0.12)", radius: 18 }}
+                hitSlop={8}
+                onPress={handleLogout}
+                style={({ pressed }) => [
+                  styles.logoutButton,
+                  pressed ? styles.logoutButtonPressed : null,
+                ]}
+              >
+                <SessionExitIcon />
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        <Button
+          disabled={!tables.length}
+          fullWidth={false}
+          leading={<CogIcon compact />}
+          onPress={openTableActionsSheet}
+          size="md"
+          style={styles.headerActionButton}
+          title="Masa İşlemleri"
+          variant="brandOutline"
+        />
+      </View>
 
       <View style={styles.searchShell}>
         <SearchIcon />
@@ -131,32 +196,28 @@ export function TablesOverviewScreen({ navigation }: Props) {
           label="Tümü"
           onPress={() => setActiveFilter("all")}
           selected={activeFilter === "all"}
+          style={styles.filterChip}
         />
         <FilterChip
           label="Dolu"
           onPress={() => setActiveFilter("occupied")}
           selected={activeFilter === "occupied"}
+          style={styles.filterChip}
         />
         <FilterChip
           label="Boş"
           onPress={() => setActiveFilter("empty")}
           selected={activeFilter === "empty"}
+          style={styles.filterChip}
         />
         <FilterChip
           label="Ödeme"
           onPress={() => setActiveFilter("paymentPending")}
           selected={activeFilter === "paymentPending"}
+          style={styles.filterChip}
           tone="warning"
         />
       </View>
-
-      <Button
-        leading={<CogIcon />}
-        onPress={openTableActionsSheet}
-        style={styles.actionsButton}
-        title="Masa İşlemleri"
-        variant="brandOutline"
-      />
 
       {filteredTables.length ? (
         <View style={styles.grid}>
@@ -167,6 +228,7 @@ export function TablesOverviewScreen({ navigation }: Props) {
               onPress={() =>
                 navigation.navigate(ROUTES.TABLE_DETAIL, { tableId: table.id })
               }
+              style={styles.tableCard}
               table={table}
             />
           ))}
@@ -182,9 +244,10 @@ export function TablesOverviewScreen({ navigation }: Props) {
 
       <TableActionsSheet
         onClose={closeTableActionsSheet}
-        onMerge={navigateToTableActions}
-        onMove={navigateToTableActions}
-        onSplit={navigateToTableActions}
+        onOpen={() => navigateToTableActions("open")}
+        onMerge={() => navigateToTableActions("merge")}
+        onMove={() => navigateToTableActions("move")}
+        onSplit={() => navigateToTableActions("split")}
         visible={isActionSheetVisible}
       />
     </Screen>
@@ -199,23 +262,32 @@ function BrandMark() {
   );
 }
 
-function MenuButton({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityLabel="Masa işlemlerini aç"
-      accessibilityRole="button"
-      android_ripple={{ color: "rgba(39,48,67,0.05)", radius: 22 }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.menuButton,
-        pressed ? styles.iconButtonPressed : null,
-      ]}
-    >
-      <View style={styles.menuLine} />
-      <View style={styles.menuLine} />
-      <View style={styles.menuLine} />
-    </Pressable>
-  );
+function compareTablesByNumericLabel(
+  left: { label: string },
+  right: { label: string },
+) {
+  const leftNumber = extractTableNumber(left.label);
+  const rightNumber = extractTableNumber(right.label);
+
+  if (leftNumber !== null && rightNumber !== null && leftNumber !== rightNumber) {
+    return leftNumber - rightNumber;
+  }
+
+  if (leftNumber !== null && rightNumber === null) {
+    return -1;
+  }
+
+  if (leftNumber === null && rightNumber !== null) {
+    return 1;
+  }
+
+  return left.label.localeCompare(right.label, "tr", { numeric: true });
+}
+
+function extractTableNumber(label: string) {
+  const match = label.match(/(\d+)/);
+
+  return match ? Number(match[1]) : null;
 }
 
 function SearchIcon() {
@@ -227,9 +299,9 @@ function SearchIcon() {
   );
 }
 
-function CogIcon() {
+function CogIcon({ compact = false }: { compact?: boolean }) {
   return (
-    <View style={styles.cogFrame}>
+    <View style={[styles.cogFrame, compact ? styles.cogFrameCompact : null]}>
       <View style={styles.cogRing} />
       <View style={[styles.cogTooth, styles.cogToothTop]} />
       <View style={[styles.cogTooth, styles.cogToothBottom]} />
@@ -239,10 +311,18 @@ function CogIcon() {
   );
 }
 
+function SessionExitIcon() {
+  return (
+    <View style={styles.logoutIconFrame}>
+      <View style={styles.logoutDoor} />
+      <View style={styles.logoutArrowShaft} />
+      <View style={[styles.logoutArrowHead, styles.logoutArrowHeadTop]} />
+      <View style={[styles.logoutArrowHead, styles.logoutArrowHeadBottom]} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  actionsButton: {
-    marginBottom: 0,
-  },
   brandBadge: {
     alignItems: "center",
     backgroundColor: colors.primary,
@@ -261,6 +341,9 @@ const styles = StyleSheet.create({
     height: 16,
     position: "relative",
     width: 16,
+  },
+  cogFrameCompact: {
+    marginRight: -spacing.xs,
   },
   cogRing: {
     borderColor: colors.primary,
@@ -302,17 +385,20 @@ const styles = StyleSheet.create({
     width: 3,
   },
   content: {
-    gap: spacing.md,
-    paddingTop: spacing.md,
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
   },
   emptyCopy: {
     color: colors.textSecondary,
     fontSize: typography.body.fontSize,
     fontWeight: typography.body.fontWeight,
     lineHeight: typography.body.lineHeight,
+    textAlign: "center",
   },
   emptyState: {
+    alignItems: "center",
     marginBottom: 0,
+    paddingVertical: spacing.lg,
   },
   emptyTitle: {
     color: colors.textPrimary,
@@ -320,35 +406,93 @@ const styles = StyleSheet.create({
     fontWeight: typography.subtitle.fontWeight,
     lineHeight: typography.subtitle.lineHeight,
     marginBottom: spacing.xs,
+    textAlign: "center",
+  },
+  filterChip: {
+    flex: 1,
   },
   filtersRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: spacing.xs,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.md,
     justifyContent: "space-between",
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs,
   },
-  iconButtonPressed: {
-    opacity: 0.9,
+  headerActionButton: {
+    marginBottom: 0,
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.sm,
   },
-  menuButton: {
+  infoLeftCluster: {
     alignItems: "center",
-    borderRadius: radii.pill,
-    height: 36,
-    justifyContent: "center",
-    width: 36,
+    flex: 1,
+    flexDirection: "row",
+    minWidth: 0,
+    paddingRight: spacing.sm,
   },
-  menuLine: {
-    backgroundColor: colors.textPrimary,
+  infoRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.xs,
+  },
+  logoutArrowHead: {
+    backgroundColor: colors.primary,
+    borderRadius: 1,
+    height: 2,
+    position: "absolute",
+    right: 0,
+    width: 7,
+  },
+  logoutArrowHeadBottom: {
+    top: 8,
+    transform: [{ rotate: "-42deg" }],
+  },
+  logoutArrowHeadTop: {
+    top: 4,
+    transform: [{ rotate: "42deg" }],
+  },
+  logoutArrowShaft: {
+    backgroundColor: colors.primary,
     borderRadius: radii.pill,
     height: 2,
-    marginVertical: 1.5,
-    width: 18,
+    left: 7,
+    position: "absolute",
+    top: 6,
+    width: 9,
+  },
+  logoutButton: {
+    alignItems: "center",
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: "center",
+    marginLeft: spacing.xs,
+    width: 32,
+  },
+  logoutButtonPressed: {
+    opacity: 0.9,
+  },
+  logoutDoor: {
+    borderColor: colors.primary,
+    borderRadius: 3,
+    borderWidth: 1.6,
+    height: 14,
+    left: 1,
+    position: "absolute",
+    top: 0,
+    width: 7,
+  },
+  logoutIconFrame: {
+    height: 14,
+    position: "relative",
+    width: 16,
   },
   searchHandle: {
     backgroundColor: colors.textMuted,
@@ -393,11 +537,30 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     borderWidth: 1,
     flexDirection: "row",
-    minHeight: 52,
+    minHeight: 54,
   },
   summaryRow: {
     flexDirection: "row",
     gap: spacing.xs,
     justifyContent: "space-between",
+  },
+  tableCard: {
+    marginBottom: spacing.sm,
+    width: "48.4%",
+  },
+  waiterBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  waiterName: {
+    color: colors.textSecondary,
+    flexShrink: 1,
+    fontSize: typography.body.fontSize,
+    fontWeight: typography.bodyStrong.fontWeight,
+    lineHeight: typography.body.lineHeight,
+  },
+  waiterRow: {
+    alignItems: "center",
+    flexDirection: "row",
   },
 });

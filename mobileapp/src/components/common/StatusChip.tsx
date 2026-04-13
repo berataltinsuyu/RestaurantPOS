@@ -33,7 +33,7 @@ export function StatusChip({
   style,
 }: StatusChipProps) {
   const palette = statusPalette[status];
-  const normalizedLabel = label.replace(/([A-Z])/g, " $1").trim();
+  const normalizedLabel = STATUS_LABELS[status] ?? STATUS_LABELS[label as SupportedStatus] ?? label.replace(/([A-Z])/g, " $1").trim();
 
   return (
     <View
@@ -92,3 +92,16 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
 });
+
+const STATUS_LABELS: Partial<Record<SupportedStatus, string>> = {
+  connecting: "Bağlanıyor",
+  disabled: "Kapalı",
+  empty: "Boş",
+  error: "Hata",
+  idle: "Beklemede",
+  occupied: "Dolu",
+  open: "Açık",
+  paid: "Ödendi",
+  paymentPending: "Bekliyor",
+  ready: "Hazır",
+};

@@ -1,5 +1,11 @@
 import React from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import {
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  ViewStyle,
+} from "react-native";
 
 import { ToneName } from "../../theme/colors";
 import {
@@ -15,6 +21,7 @@ interface FilterChipProps {
   selected?: boolean;
   tone?: ToneName;
   onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function FilterChip({
@@ -22,6 +29,7 @@ export function FilterChip({
   selected = false,
   tone = "neutral",
   onPress,
+  style,
 }: FilterChipProps) {
   const palette = tonePalette[tone];
 
@@ -41,6 +49,7 @@ export function FilterChip({
             }
           : styles.unselected,
         pressed ? styles.pressed : null,
+        style,
       ]}
     >
       <Text
@@ -67,7 +76,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: 40,
+    minHeight: 44,
     overflow: "hidden",
     paddingHorizontal: spacing.md,
   },

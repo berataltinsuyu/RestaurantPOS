@@ -18,9 +18,12 @@ export type RootStackParamList = {
   [ROUTES.SPLIT_PAYMENT]: {
     tableId: string;
   };
-  [ROUTES.TABLE_ACTIONS]: {
-    tableId: string;
-  };
+  [ROUTES.TABLE_ACTIONS]:
+    | {
+        tableId?: string;
+        initialAction?: "open" | "move" | "merge" | "split";
+      }
+    | undefined;
   [ROUTES.CARD_POS_REDIRECT]: {
     tableId: string;
     paymentIntentId: string;

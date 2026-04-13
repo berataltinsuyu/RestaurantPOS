@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
+  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -8,11 +9,11 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
+import { getBackendErrorMessage } from "../../../api/http/api-client";
 import { BottomActionBar } from "../../../components/common/BottomActionBar";
 import { Button } from "../../../components/common/Button";
 import { InfoRow } from "../../../components/common/InfoRow";
 import { Screen } from "../../../components/common/Screen";
-import { SectionHeader } from "../../../components/common/SectionHeader";
 import { SurfaceCard } from "../../../components/common/SurfaceCard";
 import { PaymentMethodCard } from "../../../components/payments/PaymentMethodCard";
 import { SplitPaymentEntryCard } from "../../../components/payments/SplitPaymentEntryCard";
@@ -48,11 +49,15 @@ type SplitMode = SplitPaymentSource;
 type SplitMethod = SplitPaymentMethod;
 type QuickAmountOption = "half" | "third" | "quarter" | "remaining";
 
+const EMPTY_SPLIT_ENTRIES: SplitPaymentEntry[] = [];
+
 export function SplitPaymentScreen({ navigation, route }: Props) {
   const { tableId } = route.params;
   useBillRealtimeSync(tableId);
+  const splitSubmitLockRef = useRef(false);
   const [mode, setMode] = useState<SplitMode>("amount");
   const [isAddingPayment, setIsAddingPayment] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [draftMethod, setDraftMethod] = useState<SplitMethod | null>(null);
   const [draftAmountInput, setDraftAmountInput] = useState("");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
@@ -60,14 +65,13 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
     state.tables.find((candidate) => candidate.id === tableId),
   );
   const order = useAppStore((state) => state.ordersByTableId[tableId]);
-  const committedEntries = useAppStore(
-    (state) => state.splitPaymentsByTableId[tableId] ?? [],
-  );
+  const committedEntries =
+    useAppStore((state) => state.splitPaymentsByTableId[tableId]) ??
+    EMPTY_SPLIT_ENTRIES;
   const setPaymentIntent = useAppStore((state) => state.setPaymentIntent);
   const clearPaymentIntent = useAppStore((state) => state.clearPaymentIntent);
+  const clearSplitPayments = useAppStore((state) => state.clearSplitPayments);
   const setSplitPayments = useAppStore((state) => state.setSplitPayments);
-  const upsertOrder = useAppStore((state) => state.upsertOrder);
-  const upsertTable = useAppStore((state) => state.upsertTable);
   const [entries, setEntries] = useState<SplitPaymentEntry[]>(committedEntries);
   const paymentSummary = order ? getOrderPaymentSummary(order) : null;
   const existingPaidAmount = order?.paidAmount ?? 0;
@@ -151,7 +155,7 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
       <Screen>
         <SurfaceCard>
           <Text style={styles.copy}>
-            Split payment requires a live table and order.
+            Bölünmüş ödeme için masa ve sipariş bilgisi gereklidir.
           </Text>
         </SurfaceCard>
       </Screen>
@@ -239,68 +243,101 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
       return;
     }
 
-    const nextCommittedEntries = entries
-      .filter((entry) => entry.isCommitted || entry.method === "cash")
-      .map((entry) => ({
-        ...entry,
-        isCommitted: true,
-      }));
-    const cardTotal = roundCurrency(
-      entries
-        .filter((entry) => !entry.isCommitted && entry.method === "card")
-        .reduce((sum, entry) => sum + entry.amount, 0),
-    );
-
-    clearPaymentIntent();
-    setSplitPayments(tableId, nextCommittedEntries);
-
-    if (cardTotal > 0) {
-      const intent = await services.payments.startSplitPayment({
-        amountPerSplit: cardTotal,
-        orderId: currentOrder.id,
-        splitCount: entries.length,
-        tableId,
-      });
-
-      setPaymentIntent(intent);
-      upsertOrder({
-        ...currentOrder,
-        status: "paymentPending",
-        tax: currentPaymentSummary.serviceFee,
-        total: currentPaymentSummary.total,
-        updatedAt: new Date().toISOString(),
-      });
-      upsertTable({
-        ...currentTable,
-        status: "paymentPending",
-        totalAmount: currentPaymentSummary.total,
-        updatedAt: new Date().toISOString(),
-      });
-      navigation.replace(ROUTES.CARD_POS_REDIRECT, {
-        paymentIntentId: intent.id,
+    if (splitSubmitLockRef.current) {
+      console.info("[SplitPaymentScreen] Duplicate split-payment submit prevented.", {
+        entryCount: entries.length,
         tableId,
       });
       return;
     }
 
-    upsertOrder({
-      ...currentOrder,
-      status: "paid",
-      tax: currentPaymentSummary.serviceFee,
-      total: currentPaymentSummary.total,
-      updatedAt: new Date().toISOString(),
-    });
-    upsertTable({
-      ...currentTable,
-      status: "paid",
-      totalAmount: currentPaymentSummary.total,
-      updatedAt: new Date().toISOString(),
-    });
-    navigation.replace(ROUTES.PAYMENT_SUCCESS, {
-      amount: roundCurrency(entries.reduce((sum, entry) => sum + entry.amount, 0)),
-      method: "split",
+    splitSubmitLockRef.current = true;
+    setIsSubmitting(true);
+    console.info("[SplitPaymentScreen] Split payment submit started.", {
+      entryCount: entries.length,
+      remainingAmount,
       tableId,
     });
+
+    let completed = false;
+
+    try {
+      const nextCommittedEntries = entries
+        .filter((entry) => entry.isCommitted || entry.method === "cash")
+        .map((entry) => ({
+          ...entry,
+          isCommitted: true,
+        }));
+      const cardTotal = roundCurrency(
+        entries
+          .filter((entry) => !entry.isCommitted && entry.method === "card")
+          .reduce((sum, entry) => sum + entry.amount, 0),
+      );
+
+      clearPaymentIntent();
+      setSplitPayments(tableId, nextCommittedEntries);
+
+      if (cardTotal > 0) {
+        const intent = await services.payments.startSplitPayment({
+          amountPerSplit: cardTotal,
+          entries,
+          orderId: currentOrder.id,
+          splitCount: entries.length,
+          tableId,
+        });
+
+        setPaymentIntent(intent);
+        navigation.replace(ROUTES.CARD_POS_REDIRECT, {
+          paymentIntentId: intent.id,
+          tableId,
+        });
+        completed = true;
+        return;
+      }
+
+      const receipt = await services.payments.confirmCardPayment({
+        paymentIntentId: (
+          await services.payments.startSplitPayment({
+            amountPerSplit: roundCurrency(
+              entries.reduce((sum, entry) => sum + entry.amount, 0),
+            ),
+            entries,
+            orderId: currentOrder.id,
+            splitCount: entries.length,
+            tableId,
+          })
+        ).id,
+      });
+      clearSplitPayments(tableId);
+      await services.sync.refreshAfterMutation(tableId);
+      navigation.replace(ROUTES.PAYMENT_SUCCESS, {
+        amount: receipt.amount,
+        method: "split",
+        receiptId: receipt.receiptId,
+        tableId,
+      });
+      completed = true;
+    } catch (error) {
+      console.error("[SplitPaymentScreen] Split payment completion failed.", error);
+      const detail = getBackendErrorMessage(
+        error,
+        "İşlem backend üzerinde tamamlanamadı. Lütfen tekrar deneyin.",
+      );
+      Alert.alert(
+        "Bölünmüş ödeme tamamlanamadı",
+        detail,
+      );
+    } finally {
+      console.info("[SplitPaymentScreen] Split payment submit finished.", {
+        completed,
+        tableId,
+      });
+
+      if (!completed) {
+        splitSubmitLockRef.current = false;
+        setIsSubmitting(false);
+      }
+    }
   }
 
   return (
@@ -309,7 +346,7 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
       footer={
         <BottomActionBar>
           <Button
-            disabled={remainingAmount > 0 || entries.length === 0}
+            disabled={remainingAmount > 0 || entries.length === 0 || isSubmitting}
             onPress={handleComplete}
             title={
               remainingAmount > 0
@@ -324,12 +361,7 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
         </BottomActionBar>
       }
     >
-      <SectionHeader
-        align="center"
-        leading={<BackButton onPress={() => navigation.goBack()} />}
-        subtitle={formatTableLabel(currentTable.label)}
-        title="Bölünmüş Ödeme"
-      />
+      <Text style={styles.tableLabel}>{formatTableLabel(currentTable.label)}</Text>
 
       <View style={styles.modeToggle}>
         <ModeSegment
@@ -385,7 +417,7 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
 
       {entries.length > 0 ? (
         <View style={styles.entriesSection}>
-          <Text style={styles.entriesTitle}>ÖDEMELER ({entries.length})</Text>
+          <Text style={styles.entriesTitle}>Ödemeler ({entries.length})</Text>
           {entries.map((entry, index) => (
             <SplitPaymentEntryCard
               amount={formatCurrency(entry.amount)}
@@ -516,7 +548,7 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
               selected={draftMethod === "card"}
               style={styles.methodCard}
               subtitle="POS ile"
-              title="Kart"
+              title="Kart ile Ödeme"
               tone="info"
             />
             <PaymentMethodCard
@@ -525,8 +557,8 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
               onPress={() => setDraftMethod("cash")}
               selected={draftMethod === "cash"}
               style={styles.methodCard}
-              subtitle="Tahsilat"
-              title="Nakit"
+              subtitle="Nakit tahsilat"
+              title="Nakit Ödeme"
               tone="success"
             />
           </View>
@@ -635,25 +667,6 @@ function QuickAmountChip({
       ]}
     >
       <Text style={styles.quickChipLabel}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function BackButton({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityLabel="Bölünmüş ödemeden geri dön"
-      accessibilityRole="button"
-      android_ripple={{ color: "rgba(39,48,67,0.06)", radius: 20 }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.backButton,
-        pressed ? styles.navButtonPressed : null,
-      ]}
-    >
-      <View style={styles.backArrowStem} />
-      <View style={[styles.backArrowHead, styles.backArrowHeadTop]} />
-      <View style={[styles.backArrowHead, styles.backArrowHeadBottom]} />
     </Pressable>
   );
 }
@@ -773,38 +786,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  backArrowHead: {
-    borderColor: colors.textPrimary,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    height: 8,
-    left: 8,
-    position: "absolute",
-    width: 8,
-  },
-  backArrowHeadBottom: {
-    top: 14,
-    transform: [{ rotate: "-45deg" }],
-  },
-  backArrowHeadTop: {
-    top: 8,
-    transform: [{ rotate: "-135deg" }],
-  },
-  backArrowStem: {
-    backgroundColor: colors.textPrimary,
-    borderRadius: radii.pill,
-    height: 2,
-    left: 10,
-    position: "absolute",
-    top: 16,
-    width: 12,
-  },
-  backButton: {
-    borderRadius: radii.pill,
-    height: 32,
-    position: "relative",
-    width: 32,
-  },
   cancelButton: {
     borderRadius: radii.pill,
     paddingHorizontal: spacing.xs,
@@ -859,8 +840,8 @@ const styles = StyleSheet.create({
     width: 20,
   },
   content: {
-    gap: spacing.md,
-    paddingTop: spacing.sm,
+    gap: spacing.sm,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.xl,
   },
   copy: {
@@ -891,7 +872,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   entriesSection: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   entriesTitle: {
     color: colors.textPrimary,
@@ -968,7 +949,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     marginBottom: spacing.sm,
-    minHeight: 60,
+    minHeight: 64,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
   },
@@ -1000,7 +981,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     flex: 1,
     justifyContent: "center",
-    minHeight: 38,
+    minHeight: 42,
     paddingHorizontal: spacing.md,
   },
   modeSegmentActive: {
@@ -1026,9 +1007,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: spacing.xxs,
   },
-  navButtonPressed: {
-    opacity: 0.9,
-  },
   quickAmountsRow: {
     flexDirection: "row",
     gap: spacing.sm,
@@ -1042,7 +1020,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flex: 1,
     justifyContent: "center",
-    minHeight: 42,
+    minHeight: 44,
   },
   quickChipLabel: {
     color: colors.textPrimary,
@@ -1144,5 +1122,12 @@ const styles = StyleSheet.create({
     fontWeight: typography.heading.fontWeight,
     lineHeight: typography.subtitle.lineHeight,
     textAlign: "center",
+  },
+  tableLabel: {
+    color: colors.textSecondary,
+    fontSize: typography.body.fontSize,
+    fontWeight: typography.bodyStrong.fontWeight,
+    lineHeight: typography.body.lineHeight,
+    marginBottom: spacing.xs,
   },
 });

@@ -65,6 +65,9 @@ export class RealtimeSyncService {
     const realtimeActive = env.realtime.enabled && this.realtimeService.isConfigured;
 
     if (!this.tablesService.isReadConfigured) {
+      console.warn("[RealtimeSyncService] Tables overview sync is disabled because live tables read is not configured.", {
+        realtimeEnabled: env.realtime.enabled,
+      });
       onConnectionStateChange("disabled");
       return () => undefined;
     }
@@ -82,7 +85,8 @@ export class RealtimeSyncService {
         onTablesSnapshot(tables);
         onRealtimeEvent();
         onConnectionStateChange(realtimeActive ? "ready" : "disabled");
-      } catch {
+      } catch (error) {
+        console.error("[RealtimeSyncService] Tables overview sync failed.", error);
         if (active) {
           onConnectionStateChange("error");
         }
@@ -140,6 +144,11 @@ export class RealtimeSyncService {
       !this.tablesService.isReadConfigured ||
       !Number.isFinite(numericTableId)
     ) {
+      console.warn("[RealtimeSyncService] Bill scope sync is disabled.", {
+        numericTableId,
+        realtimeEnabled: env.realtime.enabled,
+        tablesReadConfigured: this.tablesService.isReadConfigured,
+      });
       onConnectionStateChange("disabled");
       return () => undefined;
     }
@@ -180,7 +189,11 @@ export class RealtimeSyncService {
         onPaymentsSnapshot(tableRecord.CurrentBillId, payments);
         onRealtimeEvent();
         onConnectionStateChange(realtimeActive ? "ready" : "disabled");
-      } catch {
+      } catch (error) {
+        console.error("[RealtimeSyncService] Bill scope sync failed.", {
+          tableId,
+          error,
+        });
         if (active) {
           onConnectionStateChange("error");
         }

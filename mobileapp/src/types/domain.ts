@@ -26,6 +26,11 @@ export interface WaiterSession {
   waiterName: string;
   shiftId: string;
   deviceLabel?: string;
+  accessToken?: string;
+  backendUserId?: number;
+  branchId?: number;
+  permissions?: string[];
+  userName?: string;
 }
 
 export interface RestaurantTableRecord {
@@ -172,6 +177,7 @@ export interface SplitTableInput {
 
 export interface AddMenuProductInput {
   tableId: string;
+  billId?: number;
   productId: string;
   quantity: number;
 }
@@ -194,6 +200,7 @@ export interface StartSplitPaymentInput {
   orderId: string;
   splitCount: number;
   amountPerSplit: number;
+  entries?: SplitPaymentEntry[];
 }
 
 export interface ConfirmCardPaymentInput {
@@ -214,6 +221,9 @@ export interface PaymentIntent {
   method: PaymentMethod;
   status: PaymentIntentStatus;
   createdAt: string;
+  billId?: number;
+  splitEntries?: SplitPaymentEntry[];
+  terminalId?: number;
 }
 
 export interface SplitPaymentEntry {

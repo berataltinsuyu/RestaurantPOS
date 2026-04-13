@@ -1,6 +1,5 @@
 import { OrdersGateway } from "../contracts/orders.contract";
 import {
-  mockMenuProductsFixture,
   mockOrdersFixture,
 } from "./mock-fixtures";
 import {
@@ -45,22 +44,27 @@ function buildEmptyOrder(tableId: string): OrderDetail {
 }
 
 export class MockOrdersGateway implements OrdersGateway {
+  constructor(
+    private readonly menuCatalog: {
+      getMenuProductById: (productId: string) => Promise<MenuProduct | null>;
+      listMenuProducts: () => Promise<MenuProduct[]>;
+    },
+  ) {}
+
   async getOrderByTableId(tableId: string): Promise<OrderDetail | null> {
     const order = mockOrdersFixture[tableId];
     return order ? cloneOrder(order) : null;
   }
 
   async listMenuProducts(): Promise<MenuProduct[]> {
-    return mockMenuProductsFixture.map((product) => ({ ...product }));
+    return this.menuCatalog.listMenuProducts();
   }
 
   async addMenuProduct(input: AddMenuProductInput): Promise<OrderDetail> {
-    const product = mockMenuProductsFixture.find(
-      (candidate) => candidate.id === input.productId,
-    );
+    const product = await this.menuCatalog.getMenuProductById(input.productId);
 
     if (!product) {
-      throw new Error("Product could not be found in the mock menu catalog.");
+      throw new Error("Product could not be found in the live menu catalog.");
     }
 
     const existingOrderRecord = mockOrdersFixture[input.tableId];

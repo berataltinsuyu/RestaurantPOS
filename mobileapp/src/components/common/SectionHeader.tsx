@@ -1,5 +1,11 @@
 import React, { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from "react-native";
 
 import { colors, spacing, typography } from "../../theme";
 
@@ -10,6 +16,7 @@ interface SectionHeaderProps {
   subtitle?: string;
   right?: ReactNode;
   align?: "start" | "center";
+  style?: StyleProp<ViewStyle>;
 }
 
 export function SectionHeader({
@@ -19,10 +26,11 @@ export function SectionHeader({
   subtitle,
   right,
   align = "start",
+  style,
 }: SectionHeaderProps) {
   if (align === "center") {
     return (
-      <View style={[styles.wrapper, styles.wrapperCentered]}>
+      <View style={[styles.wrapper, styles.wrapperCentered, style]}>
         {leading ? <View style={[styles.slot, styles.slotLeft]}>{leading}</View> : null}
         <View style={[styles.copyBlock, styles.copyBlockCentered]}>
           {eyebrow ? <Text style={[styles.eyebrow, styles.eyebrowCentered]}>{eyebrow}</Text> : null}
@@ -37,7 +45,7 @@ export function SectionHeader({
   }
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, style]}>
       <View style={styles.leftCluster}>
         {leading ? <View style={styles.leading}>{leading}</View> : null}
         <View style={styles.copyBlock}>
@@ -116,7 +124,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   wrapperCentered: {
     justifyContent: "center",

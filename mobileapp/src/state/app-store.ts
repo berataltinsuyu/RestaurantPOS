@@ -1,15 +1,7 @@
 import { create } from "zustand";
 
-import {
-  MOCK_MENU_CATEGORIES,
-  MOCK_MENU_PRODUCTS,
-  MOCK_ORDERS,
-  MOCK_TABLES,
-} from "../constants/mock-data";
 import { ConnectionState } from "../types/app";
 import {
-  MenuCategory,
-  MenuProduct,
   OrderDetail,
   PaymentIntent,
   PaymentIntentStatus,
@@ -24,8 +16,6 @@ interface AppStoreState {
   connectionState: ConnectionState;
   lastSyncAt: string | null;
   selectedTableId: string | null;
-  menuCategories: MenuCategory[];
-  menuProducts: MenuProduct[];
   paymentIntent: PaymentIntent | null;
   paymentsByBillId: Record<number, PaymentRecord[]>;
   splitPaymentsByTableId: Record<string, SplitPaymentEntry[]>;
@@ -94,9 +84,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
   connectionState: "idle",
   lastSyncAt: null,
   markRealtimeEvent: () => set({ lastSyncAt: new Date().toISOString() }),
-  menuCategories: MOCK_MENU_CATEGORIES,
-  menuProducts: MOCK_MENU_PRODUCTS,
-  ordersByTableId: MOCK_ORDERS,
+  ordersByTableId: {},
   paymentIntent: null,
   paymentsByBillId: {},
   selectedTableId: null,
@@ -122,7 +110,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
   setSession: (session) => set({ session }),
   setTables: (tables) => set({ tables }),
   splitPaymentsByTableId: {},
-  tables: MOCK_TABLES,
+  tables: [],
   updatePaymentIntentStatus: (status) =>
     set((state) => ({
       paymentIntent: state.paymentIntent

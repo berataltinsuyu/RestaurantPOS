@@ -6,7 +6,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Edge, SafeAreaView } from "react-native-safe-area-context";
 
 import { colors, spacing } from "../../theme";
 
@@ -14,6 +14,7 @@ interface ScreenProps extends PropsWithChildren {
   scroll?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   footer?: ReactNode;
+  includeTopSafeArea?: boolean;
 }
 
 export function Screen({
@@ -21,20 +22,39 @@ export function Screen({
   scroll = true,
   contentContainerStyle,
   footer,
+  includeTopSafeArea = false,
 }: ScreenProps) {
+  const safeAreaEdges: Edge[] = ["left", "right"];
+
+  if (includeTopSafeArea) {
+    safeAreaEdges.unshift("top");
+  }
+
+  if (!footer) {
+    safeAreaEdges.push("bottom");
+  }
+
+  const contentStyle = footer
+    ? scroll
+      ? styles.scrollContentWithFooter
+      : styles.fixedContentWithFooter
+    : scroll
+      ? styles.scrollContent
+      : styles.fixedContent;
+
   return (
-    <SafeAreaView edges={["top", "left", "right", "bottom"]} style={styles.safeArea}>
+    <SafeAreaView edges={safeAreaEdges} style={styles.safeArea}>
       <View style={styles.container}>
         {scroll ? (
           <ScrollView
-            contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+            contentContainerStyle={[contentStyle, contentContainerStyle]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             {children}
           </ScrollView>
         ) : (
-          <View style={[styles.fixedContent, contentContainerStyle]}>{children}</View>
+          <View style={[contentStyle, contentContainerStyle]}>{children}</View>
         )}
         {footer ? <View style={styles.footer}>{footer}</View> : null}
       </View>
@@ -49,15 +69,27 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xxs,
+  },
+  scrollContentWithFooter: {
+    flexGrow: 1,
+    paddingBottom: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxs,
   },
   fixedContent: {
     flex: 1,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xxs,
+  },
+  fixedContentWithFooter: {
+    flex: 1,
+    paddingBottom: spacing.xxs,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxs,
   },
   footer: {
     backgroundColor: colors.background,

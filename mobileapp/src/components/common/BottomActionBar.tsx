@@ -29,8 +29,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopColor: colors.border,
     borderTopWidth: 1,
+    paddingBottom: spacing.xxs,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: spacing.xs,
     ...shadows.bottomAction,
   },
   safeArea: {

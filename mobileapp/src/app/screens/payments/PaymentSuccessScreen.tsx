@@ -17,6 +17,7 @@ import {
 import { ROUTES } from "../../../constants/routes";
 import { RootStackParamList } from "../../../navigation/types";
 import { useAppStore } from "../../../state/app-store";
+import { SplitPaymentEntry } from "../../../types/domain";
 import {
   colors,
   radii,
@@ -29,15 +30,24 @@ type Props = NativeStackScreenProps<
   typeof ROUTES.PAYMENT_SUCCESS
 >;
 
+const EMPTY_SPLIT_ENTRIES: SplitPaymentEntry[] = [];
+
 export function PaymentSuccessScreen({ navigation, route }: Props) {
   const { amount, method, receiptId, tableId } = route.params;
   const order = useAppStore((state) => state.ordersByTableId[tableId]);
-  const splitEntries = useAppStore(
-    (state) => state.splitPaymentsByTableId[tableId] ?? [],
-  );
+  const splitEntries =
+    useAppStore((state) => state.splitPaymentsByTableId[tableId]) ??
+    EMPTY_SPLIT_ENTRIES;
   const paymentSummary = order ? getOrderPaymentSummary(order) : null;
   const settledAmount = amount ?? paymentSummary?.total ?? order?.total ?? 0;
   const checklistItems = buildChecklistItems(method, splitEntries.length);
+
+  function handleReturnToTablesOverview() {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: ROUTES.TABLES_OVERVIEW }],
+    });
+  }
 
   return (
     <Screen
@@ -46,19 +56,20 @@ export function PaymentSuccessScreen({ navigation, route }: Props) {
         <BottomActionBar style={styles.footer}>
           <Button
             fullWidth={false}
-            onPress={() => navigation.navigate(ROUTES.TABLES_OVERVIEW)}
+            onPress={handleReturnToTablesOverview}
             style={styles.secondaryAction}
             title="Masa Planı"
             variant="secondary"
           />
           <Button
             fullWidth={false}
-            onPress={() => navigation.navigate(ROUTES.TABLE_DETAIL, { tableId })}
+            onPress={handleReturnToTablesOverview}
             style={styles.primaryAction}
-            title="Masa Detayı"
+            title="Ana Ekrana Dön"
           />
         </BottomActionBar>
       }
+      includeTopSafeArea
       scroll={false}
     >
       <View style={styles.main}>
@@ -211,7 +222,8 @@ const styles = StyleSheet.create({
     lineHeight: typography.body.lineHeight,
   },
   content: {
-    paddingBottom: spacing.lg,
+    paddingTop: 0,
+    paddingBottom: spacing.sm,
   },
   footer: {
     flexDirection: "row",
@@ -223,6 +235,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.body.fontWeight,
     lineHeight: typography.body.lineHeight,
     textAlign: "center",
+    marginTop: spacing.md,
   },
   heroHalo: {
     alignItems: "center",
@@ -236,7 +249,8 @@ const styles = StyleSheet.create({
   main: {
     alignItems: "center",
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: spacing.xl,
   },
   outlineIconFrame: {
     alignItems: "center",
@@ -297,6 +311,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.body.fontWeight,
     lineHeight: typography.subtitle.lineHeight,
     marginBottom: spacing.xl,
+    textAlign: "center",
   },
   successBadge: {
     alignItems: "center",
@@ -315,5 +330,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.title.fontWeight,
     lineHeight: typography.title.lineHeight,
     marginBottom: spacing.xs,
+    textAlign: "center",
   },
 });

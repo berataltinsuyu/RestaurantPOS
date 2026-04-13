@@ -64,7 +64,11 @@ export function CardPosRedirectScreen({ navigation, route }: Props) {
   ]);
 
   return (
-    <Screen contentContainerStyle={styles.content} scroll={false}>
+    <Screen
+      contentContainerStyle={styles.content}
+      includeTopSafeArea
+      scroll={false}
+    >
       <View style={styles.main}>
         <View style={styles.heroBadge}>
           <PosDeviceIcon />
@@ -138,8 +142,8 @@ const styles = StyleSheet.create({
     lineHeight: typography.amountHero.lineHeight,
   },
   content: {
-    justifyContent: "center",
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.lg,
+    paddingTop: 0,
   },
   copyBlock: {
     alignItems: "center",
@@ -200,7 +204,8 @@ const styles = StyleSheet.create({
   main: {
     alignItems: "center",
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: spacing.xl,
   },
   subtitle: {
     color: colors.textSecondary,
