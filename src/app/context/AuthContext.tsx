@@ -123,26 +123,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
   }, [logout]);
 
-  // const login = useCallback(async (request: LoginRequestDto) => {
-  //   const response = await authApi.login(request);
-
-  //   authStorage.save(response);
-  //   setSession(response);
-
-  //   return response;
-  // }, []);
-
-    const login = useCallback(async (request: LoginRequestDto) => {
-    console.log("AUTH login start");
-
+  const login = useCallback(async (request: LoginRequestDto) => {
     const response = await authApi.login(request);
-    console.log("AUTH login response", response);
 
     authStorage.save(response);
-    console.log("AUTH after storage save", authStorage.load());
-
     setSession(response);
-    console.log("AUTH after setSession");
 
     return response;
   }, []);
