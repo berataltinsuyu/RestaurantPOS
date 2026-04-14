@@ -129,13 +129,14 @@ builder.Services.AddCors(options =>
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "http://localhost:4173",
-                "http://127.0.0.1:4173")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        .WithOrigins(
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:4173",
+            "http://127.0.0.1:4173",
+            "https://restaurant-pos-pink.vercel.app")
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 builder.Services.AddEndpointsApiExplorer();
