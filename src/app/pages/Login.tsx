@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -12,6 +12,7 @@ import { localizeText } from '../lib/mappers';
 
 export default function Login() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { login, isAuthenticated, isBootstrapped } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -31,45 +32,22 @@ export default function Login() {
     return <Navigate to={redirectTo} replace />;
   }
 
-  // const handleLogin = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setErrorMessage('');
-  //   setIsSubmitting(true);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setIsSubmitting(true);
 
-  //   try {
-  //     await login({
-  //       branchCode: formData.business.trim(),
-  //       userName: formData.username.trim(),
-  //       password: formData.password,
-  //     });
-  //   } catch (error) {
-  //     setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
+    try {
+      await login({
+        branchCode: formData.business.trim(),
+        userName: formData.username.trim(),
+        password: formData.password,
+      });
 
-    const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setErrorMessage('');
-  setIsSubmitting(true);
-
-  try {
-    console.log("LOGIN submit start");
-
-    const result = await login({
-      branchCode: formData.business.trim(),
-      userName: formData.username.trim(),
-      password: formData.password,
-    });
-
-      console.log("LOGIN after await login", result);
-      console.log("LOGIN localStorage now", window.localStorage.getItem("vakifbank-restaurant-pos-auth"));
+      navigate(redirectTo, { replace: true });
     } catch (error) {
-      console.error("LOGIN catch", error);
       setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
     } finally {
-      console.log("LOGIN finally");
       setIsSubmitting(false);
     }
   };
@@ -77,7 +55,6 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
-        {/* Logo & Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-[#d4a017] rounded-2xl mb-4 shadow-lg">
             <span className="text-white text-4xl font-bold">V</span>
@@ -87,7 +64,6 @@ export default function Login() {
           <p className="text-sm text-gray-500">Restoran & Cafe Ödeme Yönetimi</p>
         </div>
 
-        {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
           <div className="mb-6">
             <h3 className="text-2xl font-semibold text-gray-900 mb-2">Hoş Geldiniz</h3>
@@ -95,7 +71,6 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
-            {/* Business Selection */}
             <div>
               <Label htmlFor="business" className="text-sm font-medium text-gray-700 mb-2 block">
                 İş Yeri Seçimi
@@ -115,7 +90,6 @@ export default function Login() {
               </Select>
             </div>
 
-            {/* Username */}
             <div>
               <Label htmlFor="username" className="text-sm font-medium text-gray-700 mb-2 block">
                 Kullanıcı Adı
@@ -130,7 +104,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <Label htmlFor="password" className="text-sm font-medium text-gray-700 mb-2 block">
                 Şifre
@@ -154,10 +127,12 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Remember & Forgot */}
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-[#d4a017] border-gray-300 rounded focus:ring-[#d4a017]" />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-[#d4a017] border-gray-300 rounded focus:ring-[#d4a017]"
+                />
                 <span className="text-gray-600">Beni Hatırla</span>
               </label>
               <a href="#" className="text-[#d4a017] hover:underline font-medium">
@@ -174,7 +149,6 @@ export default function Login() {
               </div>
             )}
 
-            {/* Login Button */}
             <Button
               type="submit"
               disabled={isSubmitting || !formData.username.trim() || !formData.password || !formData.business}
@@ -191,7 +165,6 @@ export default function Login() {
             </Button>
           </form>
 
-          {/* Footer */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-xs text-center text-gray-500">
               Güvenli Bağlantı • 256-bit SSL Şifreleme
@@ -199,7 +172,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Support Link */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
             Destek almak için{' '}
@@ -209,7 +181,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Copyright */}
         <div className="text-center mt-8 text-xs text-gray-500">
           © 2026 VakıfBank A.Ş. Tüm hakları saklıdır.
         </div>
