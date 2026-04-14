@@ -124,21 +124,31 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(FrontendCorsPolicy, policy =>
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy(FrontendCorsPolicy, policy =>
+//     {
+//         policy
+//         .WithOrigins(
+//             "http://localhost:5173",
+//             "http://127.0.0.1:5173",
+//             "http://localhost:4173",
+//             "http://127.0.0.1:4173",
+//             "https://restaurant-pos-pink.vercel.app")
+//         .AllowAnyHeader()
+//         .AllowAnyMethod();
+//     });
+// });
+    builder.Services.AddCors(options =>
     {
-        policy
-        .WithOrigins(
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-            "http://localhost:4173",
-            "http://127.0.0.1:4173",
-            "https://restaurant-pos-pink.vercel.app")
-        .AllowAnyHeader()
-        .AllowAnyMethod();
+        options.AddPolicy(FrontendCorsPolicy, policy =>
+        {
+            policy
+                .AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
     });
-});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
