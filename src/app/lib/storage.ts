@@ -4,8 +4,22 @@ const AUTH_STORAGE_KEY = "vakifbank-restaurant-pos-auth";
 
 const canUseStorage = () => typeof window !== "undefined";
 
+let inMemorySession: AppSession | null = null;
+
+export const sessionMemory = {
+  get: () => inMemorySession,
+  set: (session: AppSession | null) => {
+    inMemorySession = session;
+  },
+};
+
 export const authStorage = {
   load(): AppSession | null {
+    const memorySession = sessionMemory.get();
+    if (memorySession) {
+      return memorySession;
+    }
+
     if (!canUseStorage()) {
       return null;
     }
@@ -27,6 +41,8 @@ export const authStorage = {
   },
 
   save(session: AppSession) {
+    sessionMemory.set(session);
+
     if (!canUseStorage()) {
       return;
     }
@@ -35,11 +51,12 @@ export const authStorage = {
       window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
     } catch (error) {
       console.error("authStorage.save failed:", error);
-      throw error;
     }
   },
 
   clear() {
+    sessionMemory.set(null);
+
     if (!canUseStorage()) {
       return;
     }

@@ -1,5 +1,5 @@
 import { env } from "../config/env";
-import { authStorage } from "./storage";
+import { authStorage, sessionMemory } from "./storage";
 
 export class ApiError extends Error {
   status: number;
@@ -114,7 +114,7 @@ export async function apiRequest<T>(
   }
 
   if (auth) {
-    const session = authStorage.load();
+    const session = authStorage.load() ?? sessionMemory.get();
     if (session?.token) {
       requestHeaders.set("Authorization", `Bearer ${session.token}`);
     }
