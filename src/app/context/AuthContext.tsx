@@ -125,8 +125,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const login = useCallback(async (request: LoginRequestDto) => {
     const response = await authApi.login(request);
-    authStorage.save(response);
+
     setSession(response);
+
+    try {
+      authStorage.save(response);
+    } catch (error) {
+      console.error("authStorage.save failed:", error);
+    }
+
     return response;
   }, []);
 

@@ -10,15 +10,18 @@ export const authStorage = {
       return null;
     }
 
-    const rawValue = window.localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!rawValue) {
-      return null;
-    }
-
     try {
+      const rawValue = window.localStorage.getItem(AUTH_STORAGE_KEY);
+      if (!rawValue) {
+        return null;
+      }
+
       return JSON.parse(rawValue) as AppSession;
-    } catch {
-      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (error) {
+      console.error("authStorage.load failed:", error);
+      try {
+        window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      } catch {}
       return null;
     }
   },
@@ -28,7 +31,12 @@ export const authStorage = {
       return;
     }
 
-    window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+    try {
+      window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+    } catch (error) {
+      console.error("authStorage.save failed:", error);
+      throw error;
+    }
   },
 
   clear() {
@@ -36,6 +44,10 @@ export const authStorage = {
       return;
     }
 
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    try {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (error) {
+      console.error("authStorage.clear failed:", error);
+    }
   },
 };
