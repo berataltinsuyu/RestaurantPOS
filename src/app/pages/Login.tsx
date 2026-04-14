@@ -31,20 +31,45 @@ export default function Login() {
     return <Navigate to={redirectTo} replace />;
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage('');
-    setIsSubmitting(true);
+  // const handleLogin = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setErrorMessage('');
+  //   setIsSubmitting(true);
 
-    try {
-      await login({
-        branchCode: formData.business.trim(),
-        userName: formData.username.trim(),
-        password: formData.password,
-      });
+  //   try {
+  //     await login({
+  //       branchCode: formData.business.trim(),
+  //       userName: formData.username.trim(),
+  //       password: formData.password,
+  //     });
+  //   } catch (error) {
+  //     setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
+    const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErrorMessage('');
+  setIsSubmitting(true);
+
+  try {
+    console.log("LOGIN submit start");
+
+    const result = await login({
+      branchCode: formData.business.trim(),
+      userName: formData.username.trim(),
+      password: formData.password,
+    });
+
+      console.log("LOGIN after await login", result);
+      console.log("LOGIN localStorage now", window.localStorage.getItem("vakifbank-restaurant-pos-auth"));
     } catch (error) {
+      console.error("LOGIN catch", error);
       setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
     } finally {
+      console.log("LOGIN finally");
       setIsSubmitting(false);
     }
   };
