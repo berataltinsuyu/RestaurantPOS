@@ -36,17 +36,19 @@ export default function Login() {
     setErrorMessage('');
     setIsSubmitting(true);
 
-    try {
-      await login({
-        branchCode: formData.business.trim(),
-        userName: formData.username.trim(),
-        password: formData.password,
-      });
-    } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
-    } finally {
-      setIsSubmitting(false);
-    }
+  try {
+    await login({
+      branchCode: formData.business.trim(),
+      userName: formData.username.trim(),
+      password: formData.password,
+    });
+
+    window.location.assign(redirectTo);
+  } catch (error) {
+    setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
+  } finally {
+    setIsSubmitting(false);
+  }
   };
 
   return (
