@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -9,9 +8,11 @@ import { useAuth } from '../context/AuthContext';
 import { env } from '../config/env';
 import { getErrorMessage } from '../lib/error-utils';
 import { localizeText } from '../lib/mappers';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { login, isAuthenticated, isBootstrapped } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -43,7 +44,7 @@ export default function Login() {
       password: formData.password,
     });
 
-    window.location.assign(redirectTo);
+    navigate(redirectTo, { replace: true });
   } catch (error) {
     setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
   } finally {
