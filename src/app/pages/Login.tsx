@@ -29,6 +29,11 @@ export default function Login() {
       : '/dashboard';
 
   if (isBootstrapped && isAuthenticated) {
+    console.log("[LOGIN] Navigate branch hit", {
+      isBootstrapped,
+      isAuthenticated,
+      redirectTo,
+    });
     return <Navigate to={redirectTo} replace />;
   }
 
@@ -36,20 +41,33 @@ export default function Login() {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
-
-  try {
-    await login({
-      branchCode: formData.business.trim(),
-      userName: formData.username.trim(),
-      password: formData.password,
+    console.log("[LOGIN] submit start", {
+      username: formData.username.trim(),
+      business: formData.business,
+      passwordPresent: !!formData.password,
     });
 
-    navigate(redirectTo, { replace: true });
-  } catch (error) {
-    setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
-  } finally {
-    setIsSubmitting(false);
-  }
+    try {
+      console.log("[LOGIN] before await login");
+      await login({
+        branchCode: formData.business.trim(),
+        userName: formData.username.trim(),
+        password: formData.password,
+      });
+      console.log("[LOGIN] after await login");
+      console.log("[LOGIN] isAuthenticated after login", {
+        isAuthenticated,
+        isBootstrapped,
+      });
+      console.log("[LOGIN] before navigate", { redirectTo });
+      navigate(redirectTo, { replace: true });
+      console.log("[LOGIN] after navigate call", { redirectTo });
+    } catch (error) {
+      console.error("[LOGIN] login error", error);
+      setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

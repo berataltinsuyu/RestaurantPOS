@@ -23,6 +23,17 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const describeSession = (session: AppSession | null | undefined) => ({
+  hasSession: !!session,
+  tokenPresent: !!session?.token,
+  tokenLength: session?.token?.length ?? 0,
+  expiresAtPresent: !!session?.expiresAt,
+  expiresAt: session?.expiresAt ?? null,
+  userPresent: !!session?.user,
+  branchPresent: !!session?.branch,
+  permissionsCount: session?.permissions?.length ?? 0,
+});
+
 const isSessionExpired = (session: AppSession | null) => {
   if (!session?.expiresAt) {
     return true;
@@ -33,10 +44,16 @@ const isSessionExpired = (session: AppSession | null) => {
 
 const getValidStoredSession = () => {
   const storedSession = authStorage.load();
+  console.log("[AUTH] bootstrap stored session", describeSession(storedSession));
   if (storedSession && !isSessionExpired(storedSession)) {
+    console.log("[AUTH] bootstrap resolved valid session", describeSession(storedSession));
     return storedSession;
   }
 
+  console.log("[AUTH] bootstrap resolved valid session", {
+    hasSession: false,
+    reason: "missing-or-expired-session",
+  });
   authStorage.clear();
   return null;
 };
@@ -49,20 +66,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let isMounted = true;
 
     const bootstrapSession = async () => {
+      console.log("[AUTH] bootstrap start");
       const storedSession = getValidStoredSession();
       if (!storedSession) {
         if (isMounted) {
+          console.log("[AUTH] bootstrap done");
           setIsBootstrapped(true);
         }
         return;
       }
 
       try {
+        console.log("[AUTH] bootstrap auth/me start");
         const refreshedSession = await authApi.me();
         if (!isMounted) {
           return;
         }
 
+        console.log("[AUTH] bootstrap auth/me success", describeSession(refreshedSession));
         authStorage.save(refreshedSession);
         setSession(refreshedSession);
       } catch (error) {
@@ -71,6 +92,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
 
         if (isUnauthorizedError(error)) {
+          console.log("[AUTH] bootstrap auth/me 401");
           authStorage.clear();
           setSession(null);
         } else {
@@ -78,6 +100,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
       } finally {
         if (isMounted) {
+          console.log("[AUTH] bootstrap done");
           setIsBootstrapped(true);
         }
       }
@@ -124,10 +147,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [logout]);
 
   const login = useCallback(async (request: LoginRequestDto) => {
+    console.log("[AUTH] login start", {
+      branchCode: request.branchCode ?? null,
+      branchId: request.branchId ?? null,
+      userName: request.userName,
+      passwordPresent: !!request.password,
+    });
     const response = await authApi.login(request);
+    console.log("[AUTH] login response", describeSession(response));
 
+    console.log("[AUTH] before storage save", describeSession(response));
     authStorage.save(response);
+    console.log("[AUTH] after storage save");
+    console.log("[AUTH] storage load immediately after save", describeSession(authStorage.load()));
+    console.log("[AUTH] before setSession", describeSession(response));
     setSession(response);
+    console.log("[AUTH] after setSession", describeSession(response));
 
     return response;
   }, []);
