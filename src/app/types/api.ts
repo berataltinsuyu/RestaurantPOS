@@ -120,6 +120,19 @@ export interface UpsertProductRequestDto {
   isOutOfStock: boolean;
 }
 
+export interface ProductImportValidationErrorDto {
+  rowNumber: number;
+  field: string;
+  message: string;
+}
+
+export interface ProductImportSummaryDto {
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  validationErrors: ProductImportValidationErrorDto[];
+}
+
 export interface BillItemDto {
   id: number;
   billId: number;
@@ -130,7 +143,7 @@ export interface BillItemDto {
   quantity: number;
   lineTotal: number;
   note?: string | null;
-  status: "Hazirlaniyor" | "ServisEdildi" | "Iptal" | "Ikram";
+  status: "Hazirlaniyor" | "ServisEdildi" | "Iptal" | "Ikram" | "SiparisAlindi" | "Hazir" | "TeslimEdildi";
 }
 
 export interface BillSummaryDto {
@@ -165,6 +178,11 @@ export interface AddBillItemRequestDto {
 export interface UpdateBillItemRequestDto {
   quantity: number;
   note?: string;
+}
+
+export interface UpdateBillItemStatusRequestDto {
+  status: BillItemDto["status"];
+  reason?: string;
 }
 
 export interface ComplimentaryApprovalRequestDto {

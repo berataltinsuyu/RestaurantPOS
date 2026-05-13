@@ -17,8 +17,8 @@ import { colors, radii, spacing, typography } from "../../../theme";
 type Props = NativeStackScreenProps<RootStackParamList, typeof ROUTES.LOGIN>;
 
 export function LoginScreen({ navigation }: Props) {
-  const [waiterName, setWaiterName] = useState("ayse");
-  const [pin, setPin] = useState("Ayse123!");
+  const [waiterName, setWaiterName] = useState("");
+  const [pin, setPin] = useState("");
   const setSession = useAppStore((state) => state.setSession);
 
   async function handleLogin() {
@@ -99,16 +99,19 @@ export function LoginScreen({ navigation }: Props) {
         />
 
         <Button onPress={handleLogin} title="Giriş Yap" />
+        <Text style={styles.coldStartNote}>
+          İlk girişte sunucu bağlantısı birkaç saniye sürebilir.
+        </Text>
       </SurfaceCard>
 
-      <SurfaceCard tone="brand">
+      {/* <SurfaceCard tone="brand">
         <Text style={styles.noteTitle}>Bilgilendirme</Text>
         <Text style={styles.noteCopy}>
           Bu uygulama yalnızca garson el terminali akışı için hazırlanmıştır.
           `figmadesign/` yalnızca tasarım referansıdır, üretim uygulamasının
           bir parçası değildir.
         </Text>
-      </SurfaceCard>
+      </SurfaceCard> */}
     </Screen>
   );
 }
@@ -118,6 +121,13 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     justifyContent: "center",
     paddingBottom: spacing.xxxl,
+  },
+  coldStartNote: {
+    color: colors.textMuted,
+    fontSize: typography.caption.fontSize,
+    lineHeight: typography.caption.lineHeight,
+    marginTop: spacing.sm,
+    textAlign: "center",
   },
   input: {
     backgroundColor: colors.canvas,

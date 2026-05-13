@@ -5,7 +5,7 @@ export type TableStatus =
   | "paid";
 export type RestaurantTableStatusCode = 1 | 2 | 3 | 4;
 export type BillStatusCode = 1 | 2 | 3 | 4;
-export type BillItemStatusCode = 1 | 2 | 3 | 4;
+export type BillItemStatusCode = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type PaymentTypeCode = 1 | 2 | 3 | 4;
 export type PaymentStatusCode = 1 | 2 | 3 | 4 | 5;
 
@@ -123,6 +123,7 @@ export interface OrderLineItem {
   quantity: number;
   unitPrice: number;
   note?: string;
+  status?: BillItemStatusCode;
 }
 
 export interface OrderDetail {

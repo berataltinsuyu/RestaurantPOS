@@ -40,7 +40,7 @@ public class BillItem : EntityBase
     public int Quantity { get; set; }
     public decimal LineTotal { get; set; }
     public string? Note { get; set; }
-    public BillItemStatus Status { get; set; } = BillItemStatus.Hazirlaniyor;
+    public BillItemStatus Status { get; set; } = BillItemStatus.SiparisAlindi;
 
     public Bill? Bill { get; set; }
     public Product? Product { get; set; }

@@ -103,13 +103,26 @@ const getErrorMessage = async (response: Response) => {
   }
 };
 
-export async function apiRequest<T>(
+const createRequestBody = (body: unknown) => {
+  if (body === undefined) {
+    return undefined;
+  }
+
+  if (typeof FormData !== "undefined" && body instanceof FormData) {
+    return body;
+  }
+
+  return JSON.stringify(body);
+};
+
+const sendRequest = async (
   path: string,
   { auth = true, headers, body, ...options }: RequestOptions = {},
-): Promise<T> {
+) => {
   const requestHeaders = new Headers(headers);
+  const isFormDataBody = typeof FormData !== "undefined" && body instanceof FormData;
 
-  if (body !== undefined && !requestHeaders.has("Content-Type")) {
+  if (body !== undefined && !isFormDataBody && !requestHeaders.has("Content-Type")) {
     requestHeaders.set("Content-Type", "application/json");
   }
 
@@ -128,7 +141,7 @@ export async function apiRequest<T>(
       response = await fetch(`${apiBaseUrl}${path}`, {
         ...options,
         headers: requestHeaders,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: createRequestBody(body),
       });
       resolvedApiBaseUrl = apiBaseUrl;
       break;
@@ -145,6 +158,10 @@ export async function apiRequest<T>(
     );
   }
 
+  return response;
+};
+
+const ensureSuccessfulResponse = async (response: Response) => {
   if (!response.ok) {
     const message = await getErrorMessage(response);
 
@@ -157,12 +174,29 @@ export async function apiRequest<T>(
 
     throw new ApiError(message, response.status);
   }
+};
+
+export async function apiRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  const response = await sendRequest(path, options);
+  await ensureSuccessfulResponse(response);
 
   if (response.status === 204) {
     return undefined as T;
   }
 
   return (await response.json()) as T;
+}
+
+export async function apiBlobRequest(
+  path: string,
+  options: RequestOptions = {},
+): Promise<Blob> {
+  const response = await sendRequest(path, options);
+  await ensureSuccessfulResponse(response);
+  return response.blob();
 }
 
 export const buildQueryString = (params: Record<string, string | number | undefined | null>) => {

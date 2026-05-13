@@ -9,7 +9,7 @@ import {
   RotateCcw,
   MonitorCheck,
   CalendarCheck,
-  Shield
+  ChefHat
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -30,6 +30,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutGrid, label: 'Masalar', path: '/dashboard' },
+  { icon: ChefHat, label: 'Mutfak Ekranı', path: '/kitchen' },
   { icon: Clock, label: 'İşlem Geçmişi', path: '/history' },
   { icon: RotateCcw, label: 'İade / İptal', path: '/refund-cancel' },
   { icon: MonitorCheck, label: 'Terminal Yönetimi', path: '/terminal-management' },
@@ -41,7 +42,6 @@ const menuItems: MenuItem[] = [
     path: '/menu-management',
     allowedPermissions: [appPermissions.menuManagement] as const,
   },
-  { icon: Shield, label: 'Rol ve Yetkiler', path: '/role-permissions' },
   { icon: Settings, label: 'Ayarlar', path: '/settings' },
 ];
 

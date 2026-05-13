@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react";
-import { Alert } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getBackendErrorMessage } from "../../../api/http/api-client";
 import { Button } from "../../../components/common/Button";
+import { FeedbackBanner } from "../../../components/common/FeedbackBanner";
 import { FilterChip } from "../../../components/common/FilterChip";
 import { Screen } from "../../../components/common/Screen";
 import { SurfaceCard } from "../../../components/common/SurfaceCard";
@@ -30,15 +30,32 @@ type Props = NativeStackScreenProps<
 
 type TableFilter = "all" | "empty" | "occupied" | "paymentPending";
 type TableActionMode = "open" | "move" | "merge" | "split";
+type FeedbackState = { tone: "success" | "error" | "info"; message: string } | null;
 
 export function TablesOverviewScreen({ navigation }: Props) {
   useTablesRealtimeSync();
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<TableFilter>("all");
   const [isActionSheetVisible, setIsActionSheetVisible] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const session = useAppStore((state) => state.session);
   const tables = useAppStore((state) => state.tables);
+  const ordersByTableId = useAppStore((state) => state.ordersByTableId);
   const clearSession = useAppStore((state) => state.clearSession);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+
+      if (navigationTimerRef.current) {
+        clearTimeout(navigationTimerRef.current);
+      }
+    };
+  }, []);
 
   const filteredTables = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -89,6 +106,37 @@ export function TablesOverviewScreen({ navigation }: Props) {
     navigation.navigate(ROUTES.TABLE_ACTIONS, initialAction ? { initialAction } : undefined);
   }
 
+  function showFeedback(nextFeedback: FeedbackState) {
+    setFeedback(nextFeedback);
+
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+
+    if (nextFeedback) {
+      feedbackTimerRef.current = setTimeout(() => {
+        setFeedback(null);
+      }, 3200);
+    }
+  }
+
+  function getPreparationState(tableId: string) {
+    const order = ordersByTableId[tableId];
+    if (!order?.items.length) {
+      return undefined;
+    }
+
+    if (order.items.some((item) => item.status === 6)) {
+      return "ready" as const;
+    }
+
+    if (order.items.some((item) => item.status === 1 || item.status === 5)) {
+      return "kitchen" as const;
+    }
+
+    return undefined;
+  }
+
   async function handleOpenEmptyTable(tableId: string) {
     const currentTable = tables.find((table) => table.id === tableId);
 
@@ -106,17 +154,23 @@ export function TablesOverviewScreen({ navigation }: Props) {
         waiterId: session?.waiterId ?? "",
       });
       await services.sync.refreshAfterMutation(currentTable.id);
-      navigation.navigate(ROUTES.ORDER_DETAIL, { tableId: currentTable.id });
+      showFeedback({
+        message: `${currentTable.label} açıldı. Sipariş ekranı hazırlanıyor.`,
+        tone: "success",
+      });
+      navigationTimerRef.current = setTimeout(() => {
+        navigation.navigate(ROUTES.ORDER_DETAIL, { tableId: currentTable.id });
+      }, 450);
     } catch (error) {
       console.error("[TablesOverviewScreen] Open table failed.", error);
       const detail = getBackendErrorMessage(
         error,
         "İşlem backend üzerinde tamamlanamadı. Lütfen tekrar deneyin.",
       );
-      Alert.alert(
-        "Masa açılamadı",
-        detail,
-      );
+      showFeedback({
+        message: detail,
+        tone: "error",
+      });
     }
   }
 
@@ -132,6 +186,7 @@ export function TablesOverviewScreen({ navigation }: Props) {
         <View style={styles.infoLeftCluster}>
           <BrandMark />
           <View style={styles.waiterBlock}>
+            <Text style={styles.screenTitle}>Masalar</Text>
             <View style={styles.waiterRow}>
               <Text numberOfLines={1} style={styles.waiterName}>
                 {waiterSubtitle}
@@ -166,6 +221,15 @@ export function TablesOverviewScreen({ navigation }: Props) {
         />
       </View>
 
+      {feedback ? (
+        <FeedbackBanner
+          message={feedback.message}
+          onDismiss={() => showFeedback(null)}
+          style={styles.feedbackBanner}
+          tone={feedback.tone}
+        />
+      ) : null}
+
       <View style={styles.searchShell}>
         <SearchIcon />
         <TextInput
@@ -183,7 +247,7 @@ export function TablesOverviewScreen({ navigation }: Props) {
           tone="info"
           value={String(counts.occupied)}
         />
-        <TableStatCard label="Müsait" value={String(counts.empty)} />
+        <TableStatCard label="Boş" value={String(counts.empty)} />
         <TableStatCard
           label="Bekliyor"
           tone="warning"
@@ -228,6 +292,7 @@ export function TablesOverviewScreen({ navigation }: Props) {
               onPress={() =>
                 navigation.navigate(ROUTES.TABLE_DETAIL, { tableId: table.id })
               }
+              preparationState={getPreparationState(table.id)}
               style={styles.tableCard}
               table={table}
             />
@@ -411,6 +476,9 @@ const styles = StyleSheet.create({
   filterChip: {
     flex: 1,
   },
+  feedbackBanner: {
+    marginBottom: spacing.sm,
+  },
   filtersRow: {
     flexDirection: "row",
     gap: spacing.xs,
@@ -538,6 +606,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     minHeight: 54,
+  },
+  screenTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.heading.fontSize,
+    fontWeight: typography.heading.fontWeight,
+    lineHeight: typography.heading.lineHeight,
+    marginBottom: spacing.xxs,
   },
   summaryRow: {
     flexDirection: "row",

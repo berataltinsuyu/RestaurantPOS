@@ -48,6 +48,10 @@ export class MockTablesGateway implements TablesGateway {
     return { ...updatedTable };
   }
 
+  async closeEmptyBill(_tableId: string): Promise<TableSummary> {
+    throw new Error("MockTablesGateway does not support closing empty bills. Use BackendTablesGateway for this action.");
+  }
+
   async moveTable(input: MoveTableInput): Promise<TableSummary> {
     return (
       (await this.getTable(input.targetTableId)) ??

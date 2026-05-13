@@ -18,6 +18,7 @@ import type {
   PrinterSettingDto,
   ProductCategoryDto,
   ProductDto,
+  ProductImportSummaryDto,
   ProductQueryParamsDto,
   RefundPaymentRequestDto,
   RolePermissionMatrixDto,
@@ -31,13 +32,14 @@ import type {
   TransactionDetailDto,
   TransactionHistoryItemDto,
   UpdateBillItemRequestDto,
+  UpdateBillItemStatusRequestDto,
   UpdateRolePermissionsRequestDto,
   UpsertBranchRequest,
   UpsertProductRequestDto,
   UpsertPrinterSettingRequestDto,
   UserSummaryDto,
 } from "../types/api";
-import { apiRequest, buildQueryString } from "./http";
+import { apiBlobRequest, apiRequest, buildQueryString } from "./http";
 
 export const authApi = {
   login: (request: LoginRequestDto) =>
@@ -91,6 +93,10 @@ export const tablesApi = {
       method: "POST",
       body: payload,
     }),
+  closeEmpty: (tableId: number) =>
+    apiRequest<TableSummaryDto>(`/api/tables/${tableId}/close-empty`, {
+      method: "POST",
+    }),
 };
 
 export const billsApi = {
@@ -105,6 +111,11 @@ export const billsApi = {
     }),
   updateItem: (itemId: number, request: UpdateBillItemRequestDto) =>
     apiRequest<BillItemDto>(`/api/billitems/${itemId}`, {
+      method: "PUT",
+      body: request,
+    }),
+  updateItemStatus: (itemId: number, request: UpdateBillItemStatusRequestDto) =>
+    apiRequest<BillItemDto>(`/api/billitems/${itemId}/status`, {
       method: "PUT",
       body: request,
     }),
@@ -159,6 +170,16 @@ export const productsApi = {
     apiRequest<void>(`/api/products/${productId}`, {
       method: "DELETE",
     }),
+  downloadImportTemplate: () => apiBlobRequest("/api/products/import-template"),
+  importExcel: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return apiRequest<ProductImportSummaryDto>("/api/products/import-excel", {
+      method: "POST",
+      body: formData,
+    });
+  },
 };
 
 export const paymentsApi = {

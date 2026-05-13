@@ -1,5 +1,5 @@
 import { TablesGateway } from "../contracts/tables.contract";
-import { MobileApiClient } from "../http/api-client";
+import { ApiRequestError, MobileApiClient } from "../http/api-client";
 import {
   MergeTablesInput,
   MoveTableInput,
@@ -162,6 +162,58 @@ export class BackendTablesGateway implements TablesGateway {
     });
 
     return toTableSummary(response);
+  }
+
+  async closeEmptyBill(tableId: string): Promise<TableSummary> {
+    const numericTableId = parseNumericTableId(tableId);
+    const endpoint = `/api/tables/${numericTableId}/close-empty`;
+    const requestDebugInfo = this.apiClient.getRequestDebugInfo(endpoint);
+
+    console.info("[BackendTablesGateway] Close empty bill started.", {
+      endpoint,
+      numericTableId,
+      tableId,
+      url: requestDebugInfo.url,
+    });
+
+    try {
+      const response = await this.apiClient.request<BackendTableSummaryDto>({
+        debugResponseBody: true,
+        method: "POST",
+        path: endpoint,
+      });
+
+      console.info("[BackendTablesGateway] Close empty bill completed.", {
+        response,
+        responseTableId: response.Id,
+        status: response.Status,
+      });
+
+      return toTableSummary(response);
+    } catch (error) {
+      if (error instanceof ApiRequestError) {
+        console.error("[BackendTablesGateway] Close empty bill request failed.", {
+          endpoint,
+          method: error.method ?? "POST",
+          numericTableId,
+          path: error.path,
+          response: error.responseBody ?? null,
+          status: error.status,
+          tableId,
+          url: error.url ?? requestDebugInfo.url,
+        });
+      } else {
+        console.error("[BackendTablesGateway] Close empty bill failed before receiving a backend response.", {
+          endpoint,
+          error,
+          numericTableId,
+          tableId,
+          url: requestDebugInfo.url,
+        });
+      }
+
+      throw error;
+    }
   }
 
   async moveTable(input: MoveTableInput): Promise<TableSummary> {

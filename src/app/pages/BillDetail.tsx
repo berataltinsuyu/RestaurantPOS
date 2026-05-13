@@ -10,11 +10,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { AccessDeniedState } from '../components/enterprise/AccessDeniedState';
 import { EmptyState } from '../components/enterprise/EmptyState';
 import { LoadingSkeleton } from '../components/enterprise/LoadingSkeleton';
-import { billsApi, productsApi } from '../lib/api';
+import { billsApi, productsApi, tablesApi } from '../lib/api';
 import { getErrorMessage, isForbiddenError } from '../lib/error-utils';
-import { formatCurrency, formatTime, localizeText } from '../lib/mappers';
+import { formatCurrency, formatTime, localizeText, toUiBillItemStatus } from '../lib/mappers';
 import type { BillSummaryDto, ProductCategoryDto, ProductDto } from '../types/api';
 import { ArrowLeft, Plus, Minus, Trash2, Search, User, Clock as ClockIcon } from 'lucide-react';
+
+interface CategoryTabItem {
+  value: string;
+  label: string;
+  categoryIds: number[];
+}
+
+const invisibleTextCharacters = /[\u200B-\u200D\u2060\uFEFF]/g;
+const combiningMarks = /[\u0300-\u036f]/g;
+
+function cleanCategoryLabel(value?: string | null) {
+  return localizeText(value)
+    .replace(invisibleTextCharacters, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeCategoryKey(value?: string | null) {
+  return cleanCategoryLabel(value)
+    .normalize('NFD')
+    .replace(combiningMarks, '')
+    .replace(/ı/g, 'i')
+    .toLocaleUpperCase('en-US');
+}
 
 export default function BillDetail() {
   const { tableId } = useParams();
@@ -66,25 +90,36 @@ export default function BillDetail() {
     loadBillData();
   }, [loadBillData]);
 
-  const categoryTabs = useMemo(
-    () => [{ value: 'all', label: 'Tümü' }, ...categories.map((category) => ({
-      value: String(category.id),
-      label: localizeText(category.name),
-    }))],
-    [categories],
-  );
+  const categoryTabs = useMemo<CategoryTabItem[]>(() => {
+    const categoryGroups = new Map<string, CategoryTabItem>();
 
-  const categoryGridClass = useMemo(() => {
-    if (categoryTabs.length <= 2) {
-      return 'grid-cols-2';
-    }
+    categories.forEach((category) => {
+      const label = cleanCategoryLabel(category.name);
+      const key = normalizeCategoryKey(label);
+      if (!key) {
+        return;
+      }
 
-    if (categoryTabs.length === 3) {
-      return 'grid-cols-3';
-    }
+      const existingTab = categoryGroups.get(key);
+      if (existingTab) {
+        existingTab.categoryIds.push(category.id);
+        return;
+      }
 
-    return 'grid-cols-4';
-  }, [categoryTabs.length]);
+      categoryGroups.set(key, {
+        categoryIds: [category.id],
+        label,
+        value: String(category.id),
+      });
+    });
+
+    return [
+      { categoryIds: [], label: 'Tümü', value: 'all' },
+      ...Array.from(categoryGroups.values()),
+    ];
+  }, [categories]);
+
+  const canCloseEmptyBill = Boolean(bill && bill.paidAmount <= 0 && (bill.items.length === 0 || bill.totalAmount <= 0));
 
   const handleAddProduct = async (product: ProductDto) => {
     if (!bill) {
@@ -139,6 +174,28 @@ export default function BillDetail() {
       await loadBillData();
     } catch (error) {
       toast.error(getErrorMessage(error, 'Ürün kaldırılamadı.'));
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleCloseEmptyBill = async () => {
+    if (!bill || !canCloseEmptyBill) {
+      return;
+    }
+
+    const confirmed = window.confirm('Boş adisyon kapatılacak ve masa tekrar boş duruma alınacak. Devam edilsin mi?');
+    if (!confirmed) {
+      return;
+    }
+
+    setIsMutating(true);
+    try {
+      await tablesApi.closeEmpty(numericTableId);
+      toast.success('Boş adisyon kapatıldı. Masa tekrar boş duruma alındı.');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Boş adisyon kapatılamadı.'));
     } finally {
       setIsMutating(false);
     }
@@ -232,23 +289,25 @@ export default function BillDetail() {
                 </div>
 
                 <Tabs defaultValue="all" className="gap-4">
-                  <TabsList className={`grid h-14 w-full rounded-2xl bg-[#eef1f5] p-1 ${categoryGridClass}`}>
-                    {categoryTabs.map((category) => (
-                      <TabsTrigger
-                        key={category.value}
-                        value={category.value}
-                        className="rounded-xl text-sm font-semibold text-[#475467] data-[state=active]:bg-white data-[state=active]:text-[#1f2937] data-[state=active]:shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
-                      >
-                        {category.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
+                  <div className="-mx-1 overflow-x-auto px-1 pb-2">
+                    <TabsList className="h-auto min-w-full justify-start rounded-2xl bg-[#eef1f5] p-1">
+                      {categoryTabs.map((category) => (
+                        <TabsTrigger
+                          key={category.value}
+                          value={category.value}
+                          className="h-10 flex-none rounded-xl px-4 text-sm font-semibold text-[#475467] data-[state=active]:bg-white data-[state=active]:text-[#1f2937] data-[state=active]:shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
+                        >
+                          {category.label}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
 
                   {categoryTabs.map((category) => (
                     <TabsContent key={category.value} value={category.value} className="mt-0">
                       <div className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2 xl:grid-cols-3">
                         {products
-                          .filter((product) => category.value === 'all' || String(product.categoryId) === category.value)
+                          .filter((product) => category.value === 'all' || category.categoryIds.includes(product.categoryId))
                           .filter((product) => localizeText(product.name).toLowerCase().includes(searchQuery.toLowerCase()))
                           .map((product) => (
                             <ProductCard
@@ -273,13 +332,33 @@ export default function BillDetail() {
 
                   <div className="max-h-[460px] overflow-y-auto px-6 py-3">
                     {bill.items.length === 0 ? (
-                      <div className="py-10 text-center text-sm text-[#98a2b3]">Henüz ürün eklenmedi</div>
+                      <div className="py-10 text-center">
+                        <div className="text-sm font-semibold text-[#202633]">Henüz ürün eklenmedi</div>
+                        <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-[#667085]">
+                          Ürün ekleyerek adisyonu başlatabilir veya boş adisyonu kapatabilirsiniz.
+                        </p>
+                        {canCloseEmptyBill ? (
+                          <Button
+                            variant="outline"
+                            onClick={() => void handleCloseEmptyBill()}
+                            disabled={isMutating}
+                            className="mt-5 h-11 rounded-xl border-[#e4e7ec] text-[#475467]"
+                          >
+                            Boş Adisyonu Kapat
+                          </Button>
+                        ) : null}
+                      </div>
                     ) : (
                       <div>
                         {bill.items.map((item) => (
                           <div key={item.id} className="border-b border-[#eaecf0] py-5 last:border-b-0">
                             <div className="mb-3 flex items-start justify-between gap-3">
-                              <div className="text-lg font-semibold text-[#202633]">{localizeText(item.productNameSnapshot)}</div>
+                              <div>
+                                <div className="text-lg font-semibold text-[#202633]">{localizeText(item.productNameSnapshot)}</div>
+                                <span className="mt-1 inline-flex rounded-full bg-[#f2f4f7] px-2.5 py-1 text-xs font-semibold text-[#667085]">
+                                  {toUiBillItemStatus(item.status)}
+                                </span>
+                              </div>
                               <button
                                 onClick={() => handleRemoveItem(item.id)}
                                 disabled={isMutating}
@@ -344,10 +423,21 @@ export default function BillDetail() {
                       <div className="border-t border-[#eaecf0] px-6 py-5">
                         <Button
                           onClick={() => navigate(`/payment/${numericTableId}`)}
+                          disabled={isMutating}
                           className="h-14 w-full rounded-2xl bg-[#d4a017] text-base font-semibold text-white hover:bg-[#bf8c12]"
                         >
                           Masa Kapat
                         </Button>
+                        {canCloseEmptyBill ? (
+                          <Button
+                            variant="outline"
+                            onClick={() => void handleCloseEmptyBill()}
+                            disabled={isMutating}
+                            className="mt-3 h-12 w-full rounded-2xl border-[#e4e7ec] text-[#475467]"
+                          >
+                            Boş Adisyonu Kapat
+                          </Button>
+                        ) : null}
                         <div className="mt-3 text-center text-xs text-[#98a2b3]">
                           {bill.items.reduce((sum, item) => sum + item.quantity, 0)} ürün • VakıfBank güvenli ödeme akışı
                         </div>

@@ -35,7 +35,10 @@ public enum BillItemStatus
     Hazirlaniyor = 1,
     ServisEdildi = 2,
     Iptal = 3,
-    Ikram = 4
+    Ikram = 4,
+    SiparisAlindi = 5,
+    Hazir = 6,
+    TeslimEdildi = 7
 }
 
 public enum PosTerminalStatus

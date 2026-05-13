@@ -1,3 +1,5 @@
+import { parseBooleanLikeValue, readEnvValue } from "./env-utils";
+
 function resolveEnv(name: EnvName) {
   const processValue = readEnvValue(process.env[name]);
 
@@ -12,15 +14,6 @@ function resolveEnv(name: EnvName) {
     source: "missing" as const,
     value: undefined,
   };
-}
-
-function readEnvValue(value: string | undefined) {
-  if (!value) {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 type EnvName =
@@ -48,34 +41,7 @@ function readNumberEnv(name: EnvName) {
 }
 
 function readBooleanEnv(name: EnvName, defaultValue: boolean) {
-  const value = readEnv(name);
-
-  if (!value) {
-    return defaultValue;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  const parsedJson = (() => {
-    try {
-      return JSON.parse(normalized);
-    } catch {
-      return undefined;
-    }
-  })();
-
-  if (typeof parsedJson === "boolean") {
-    return parsedJson;
-  }
-
-  if (normalized === "1" || normalized === "yes" || normalized === "on") {
-    return true;
-  }
-
-  if (normalized === "0" || normalized === "no" || normalized === "off") {
-    return false;
-  }
-
-  return defaultValue;
+  return parseBooleanLikeValue(readEnv(name)) ?? defaultValue;
 }
 
 export const env = {

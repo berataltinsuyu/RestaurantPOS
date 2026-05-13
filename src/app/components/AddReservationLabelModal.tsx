@@ -102,15 +102,15 @@ export function AddReservationLabelModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-gray-700" />
             Rezervasyon Etiketi Ekle
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
           <div>
             <label className="text-sm font-semibold text-gray-900 mb-2 block">
               Rezervasyon Yapılacak Masa <span className="text-red-500">*</span>
@@ -259,7 +259,7 @@ export function AddReservationLabelModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="shrink-0 flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={handleClose}

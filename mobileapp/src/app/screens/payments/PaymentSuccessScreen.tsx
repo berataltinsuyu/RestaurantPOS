@@ -57,6 +57,7 @@ export function PaymentSuccessScreen({ navigation, route }: Props) {
           <Button
             fullWidth={false}
             onPress={handleReturnToTablesOverview}
+            size="md"
             style={styles.secondaryAction}
             title="Masa Planı"
             variant="secondary"
@@ -64,6 +65,7 @@ export function PaymentSuccessScreen({ navigation, route }: Props) {
           <Button
             fullWidth={false}
             onPress={handleReturnToTablesOverview}
+            size="md"
             style={styles.primaryAction}
             title="Ana Ekrana Dön"
           />

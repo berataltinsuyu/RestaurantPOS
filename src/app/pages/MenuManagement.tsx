@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AppSidebar } from '../components/AppSidebar';
@@ -28,9 +28,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { productsApi } from '../lib/api';
 import { getErrorMessage, isForbiddenError } from '../lib/error-utils';
 import { formatCurrency, formatDate, localizeText, toUiProductStatus } from '../lib/mappers';
-import type { ProductCategoryDto, ProductDto, ProductMenuStatus, UpsertProductRequestDto } from '../types/api';
+import type { ProductCategoryDto, ProductDto, ProductImportSummaryDto, ProductMenuStatus, UpsertProductRequestDto } from '../types/api';
 import {
   AlertTriangle,
+  Download,
+  FileSpreadsheet,
   Layers3,
   MoreHorizontal,
   PackageCheck,
@@ -40,6 +42,7 @@ import {
   Search,
   SquarePen,
   Trash2,
+  Upload,
 } from 'lucide-react';
 
 const productStatusOptions: Array<{ value: ProductMenuStatus | 'all'; label: string }> = [
@@ -77,6 +80,7 @@ function BooleanPill({ value, trueLabel = 'Evet', falseLabel = 'Hayır' }: { val
 
 export default function MenuManagement() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [categories, setCategories] = useState<ProductCategoryDto[]>([]);
@@ -91,6 +95,10 @@ export default function MenuManagement() {
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductDto | null>(null);
   const [removeCandidate, setRemoveCandidate] = useState<ProductDto | null>(null);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
+  const [isImportingExcel, setIsImportingExcel] = useState(false);
+  const [importSummary, setImportSummary] = useState<ProductImportSummaryDto | null>(null);
+  const [isImportSummaryOpen, setIsImportSummaryOpen] = useState(false);
 
   const loadMenuData = useCallback(async () => {
     setIsLoading(true);
@@ -227,6 +235,58 @@ export default function MenuManagement() {
     setRemoveCandidate(null);
   };
 
+  const handleDownloadTemplate = async () => {
+    setIsDownloadingTemplate(true);
+
+    try {
+      const blob = await productsApi.downloadImportTemplate();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'menu-import-template.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Excel şablonu indirilemedi.'));
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
+  };
+
+  const handleExcelFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      toast.error('Yalnızca .xlsx formatındaki Excel dosyaları yüklenebilir.');
+      return;
+    }
+
+    setIsImportingExcel(true);
+
+    try {
+      const summaryResponse = await productsApi.importExcel(file);
+      setImportSummary(summaryResponse);
+      setIsImportSummaryOpen(true);
+      await loadMenuData();
+      toast.success(
+        summaryResponse.validationErrors.length > 0
+          ? 'Excel aktarımı tamamlandı, bazı satırlar atlandı.'
+          : 'Excel aktarımı tamamlandı.',
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Excel aktarımı tamamlanamadı.'));
+    } finally {
+      setIsImportingExcel(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -242,13 +302,40 @@ export default function MenuManagement() {
               </p>
             </div>
 
-            <Button
-              onClick={handleOpenCreate}
-              disabled={categories.filter((category) => category.isActive).length === 0}
-              className="h-11 rounded-xl bg-[#d4a017] px-5 text-white hover:bg-[#c49316]"
-            >
-              Yeni Ürün Ekle
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
+              <Button
+                variant="outline"
+                onClick={() => void handleDownloadTemplate()}
+                disabled={isDownloadingTemplate}
+                className="h-11 rounded-xl border-[#e4e7ec] px-5"
+              >
+                <Download className="h-4 w-4" />
+                {isDownloadingTemplate ? 'İndiriliyor...' : 'Şablon İndir'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImportingExcel}
+                className="h-11 rounded-xl border-[#e4e7ec] px-5"
+              >
+                <Upload className="h-4 w-4" />
+                {isImportingExcel ? 'Aktarılıyor...' : 'Excel’den Aktar'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx"
+                className="hidden"
+                onChange={(event) => void handleExcelFileChange(event)}
+              />
+              <Button
+                onClick={handleOpenCreate}
+                disabled={categories.filter((category) => category.isActive).length === 0}
+                className="h-11 rounded-xl bg-[#d4a017] px-5 text-white hover:bg-[#c49316]"
+              >
+                Yeni Ürün Ekle
+              </Button>
+            </div>
           </div>
 
           {errorMessage && !isLoading && !isForbidden ? (
@@ -485,6 +572,74 @@ export default function MenuManagement() {
         isSaving={isSavingProduct}
         onSubmit={handleSubmitProduct}
       />
+
+      <Dialog open={isImportSummaryOpen} onOpenChange={setIsImportSummaryOpen}>
+        <DialogContent className="max-h-[85vh] max-w-[720px] overflow-hidden rounded-[28px] border border-[#e4e7ec] p-0 shadow-[0_24px_64px_rgba(15,23,42,0.2)]">
+          <DialogHeader className="border-b border-[#eaecf0] px-6 pb-5 pt-6">
+            <DialogTitle className="flex items-center gap-3 text-[1.05rem] font-bold text-[#202633]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef4ff] text-[#3563e9]">
+                <FileSpreadsheet className="h-5 w-5" />
+              </div>
+              Excel Aktarım Özeti
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="overflow-y-auto px-6 py-6">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="text-xs font-semibold text-emerald-700">Oluşturulan</div>
+                <div className="mt-1 text-2xl font-bold text-emerald-900">{importSummary?.createdCount ?? 0}</div>
+              </div>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                <div className="text-xs font-semibold text-blue-700">Güncellenen</div>
+                <div className="mt-1 text-2xl font-bold text-blue-900">{importSummary?.updatedCount ?? 0}</div>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <div className="text-xs font-semibold text-amber-700">Atlanan</div>
+                <div className="mt-1 text-2xl font-bold text-amber-900">{importSummary?.skippedCount ?? 0}</div>
+              </div>
+            </div>
+
+            {importSummary?.validationErrors.length ? (
+              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50">
+                <div className="border-b border-red-200 px-4 py-3 text-sm font-semibold text-red-800">
+                  Doğrulama Hataları
+                </div>
+                <div className="max-h-[260px] overflow-y-auto">
+                  <table className="min-w-full divide-y divide-red-100 text-sm">
+                    <thead className="bg-red-100/70 text-left text-xs font-semibold uppercase tracking-[0.08em] text-red-700">
+                      <tr>
+                        <th className="px-4 py-2">Satır</th>
+                        <th className="px-4 py-2">Alan</th>
+                        <th className="px-4 py-2">Hata</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-red-100 bg-red-50">
+                      {importSummary.validationErrors.map((error, index) => (
+                        <tr key={`${error.rowNumber}-${error.field}-${index}`}>
+                          <td className="whitespace-nowrap px-4 py-3 font-semibold text-red-900">{error.rowNumber}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-red-800">{error.field}</td>
+                          <td className="px-4 py-3 text-red-800">{error.message}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                Aktarım hatasız tamamlandı.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="border-t border-[#eaecf0] px-6 py-4">
+            <Button onClick={() => setIsImportSummaryOpen(false)} className="bg-[#d4a017] text-white hover:bg-[#c49316]">
+              Tamam
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!removeCandidate} onOpenChange={(open) => !open && setRemoveCandidate(null)}>
         <DialogContent className="max-w-[520px] rounded-[28px] border border-[#e4e7ec] p-0 shadow-[0_24px_64px_rgba(15,23,42,0.2)]">

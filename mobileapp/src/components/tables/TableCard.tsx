@@ -16,6 +16,7 @@ interface TableCardProps {
   table: TableSummary;
   onPress?: () => void;
   onOpen?: () => void;
+  preparationState?: "kitchen" | "ready";
   style?: StyleProp<ViewStyle>;
 }
 
@@ -30,6 +31,7 @@ export function TableCard({
   table,
   onPress,
   onOpen,
+  preparationState,
   style,
 }: TableCardProps) {
   const tone = toneByStatus[table.status];
@@ -64,16 +66,43 @@ export function TableCard({
     >
       <View style={styles.headerRow}>
         <Text style={styles.title}>{formatTableLabel(table.label)}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: palette.background, borderColor: palette.border }]}>
+          <View
+            style={[
+              styles.dot,
+              {
+                backgroundColor:
+                  tone === "neutral" ? colors.textMuted : palette.iconForeground,
+              },
+            ]}
+          />
+          <Text style={[styles.statusBadgeText, { color: palette.text }]}>
+            {getTableStatusLabel(table.status)}
+          </Text>
+        </View>
+      </View>
+
+      {preparationState ? (
         <View
           style={[
-            styles.dot,
-            {
-              backgroundColor:
-                tone === "neutral" ? colors.textMuted : palette.iconForeground,
-            },
+            styles.preparationBadge,
+            preparationState === "ready"
+              ? styles.preparationBadgeReady
+              : styles.preparationBadgeKitchen,
           ]}
-        />
-      </View>
+        >
+          <Text
+            style={[
+              styles.preparationText,
+              preparationState === "ready"
+                ? styles.preparationTextReady
+                : styles.preparationTextKitchen,
+            ]}
+          >
+            {preparationState === "ready" ? "Hazır" : "Mutfakta"}
+          </Text>
+        </View>
+      ) : null}
 
       {isEmpty ? (
         <View style={styles.emptyBody}>
@@ -126,6 +155,21 @@ function formatTime(value: string) {
   return `${hours}:${minutes}`;
 }
 
+function getTableStatusLabel(status: TableSummary["status"]) {
+  switch (status) {
+    case "empty":
+      return "Boş";
+    case "occupied":
+      return "Dolu";
+    case "paymentPending":
+      return "Ödeme";
+    case "paid":
+      return "Ödendi";
+    default:
+      return "Durum";
+  }
+}
+
 const styles = StyleSheet.create({
   amountLabel: {
     color: colors.textSecondary,
@@ -158,6 +202,7 @@ const styles = StyleSheet.create({
   dot: {
     borderRadius: radii.pill,
     height: 8,
+    marginRight: spacing.xxs,
     width: 8,
   },
   emptyBody: {
@@ -191,7 +236,34 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  preparationBadge: {
+    alignSelf: "flex-start",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+  },
+  preparationBadgeKitchen: {
+    backgroundColor: colors.surfaceInfo,
+    borderColor: colors.infoMuted,
+  },
+  preparationBadgeReady: {
+    backgroundColor: colors.surfaceSuccess,
+    borderColor: colors.successMuted,
+  },
+  preparationText: {
+    fontSize: typography.caption.fontSize,
+    fontWeight: typography.caption.fontWeight,
+    lineHeight: typography.caption.lineHeight,
+  },
+  preparationTextKitchen: {
+    color: colors.infoContrast,
+  },
+  preparationTextReady: {
+    color: colors.successContrast,
   },
   metaLine: {
     color: colors.textSecondary,
@@ -213,6 +285,19 @@ const styles = StyleSheet.create({
     fontSize: typography.heading.fontSize,
     fontWeight: typography.heading.fontWeight,
     lineHeight: typography.heading.lineHeight,
+  },
+  statusBadge: {
+    alignItems: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    flexDirection: "row",
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
+  },
+  statusBadgeText: {
+    fontSize: typography.caption.fontSize,
+    fontWeight: typography.caption.fontWeight,
+    lineHeight: typography.caption.lineHeight,
   },
 });
 

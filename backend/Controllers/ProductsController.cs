@@ -33,6 +33,38 @@ public class ProductsController(
     public async Task<ActionResult<List<ProductDto>>> GetByCategory(int categoryId, CancellationToken cancellationToken) =>
         Ok(await productService.GetProductsByCategoryAsync(categoryId, cancellationToken));
 
+    [HttpGet("import-template")]
+    public async Task<IActionResult> DownloadImportTemplate(CancellationToken cancellationToken)
+    {
+        await permissionAuthorizationService.EnsurePermissionAsync(PermissionCode.MenuManagement, MenuManagementForbiddenMessage, cancellationToken);
+
+        var content = productService.CreateImportTemplate();
+        return File(
+            content,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "menu-import-template.xlsx");
+    }
+
+    [HttpPost("import-excel")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    public async Task<ActionResult<ProductImportSummaryDto>> ImportExcel([FromForm] IFormFile? file, CancellationToken cancellationToken)
+    {
+        await permissionAuthorizationService.EnsurePermissionAsync(PermissionCode.MenuManagement, MenuManagementForbiddenMessage, cancellationToken);
+
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Yüklenecek Excel dosyası bulunamadı." });
+        }
+
+        if (!Path.GetExtension(file.FileName).Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "Yalnızca .xlsx formatındaki Excel dosyaları desteklenir." });
+        }
+
+        await using var stream = file.OpenReadStream();
+        return Ok(await productService.ImportProductsFromExcelAsync(stream, cancellationToken));
+    }
+
     [HttpPost]
     public async Task<ActionResult<ProductDto>> Create([FromBody] UpsertProductRequest request, CancellationToken cancellationToken)
     {

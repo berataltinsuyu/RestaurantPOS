@@ -44,3 +44,18 @@ public class UpsertProductRequest
     public bool IsMenuActive { get; set; } = true;
     public bool IsOutOfStock { get; set; }
 }
+
+public class ProductImportSummaryDto
+{
+    public int CreatedCount { get; set; }
+    public int UpdatedCount { get; set; }
+    public int SkippedCount { get; set; }
+    public List<ProductImportValidationErrorDto> ValidationErrors { get; set; } = [];
+}
+
+public class ProductImportValidationErrorDto
+{
+    public int RowNumber { get; set; }
+    public string Field { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+}

@@ -65,6 +65,7 @@ export function mapBillItemRecordToOrderLineItem(
     note: item.Note ?? undefined,
     productId: String(item.ProductId),
     quantity: item.Quantity,
+    status: item.Status,
     unitPrice: item.UnitPrice,
   };
 }

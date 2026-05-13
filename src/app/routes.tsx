@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { appPermissions, appRoles, type AppPermission, type AppRole } from "./lib/authorization";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import KitchenScreen from "./pages/KitchenScreen";
 import BillDetail from "./pages/BillDetail";
 import Payment from "./pages/Payment";
 import Processing from "./pages/Processing";
@@ -16,12 +17,10 @@ import Settings from "./pages/Settings";
 import MenuManagement from "./pages/MenuManagement";
 import RefundCancel from "./pages/RefundCancel";
 import TerminalManagement from "./pages/TerminalManagement";
-import TableOperations from "./pages/TableOperations";
 import EndOfDayReconciliation from "./pages/EndOfDayReconciliation";
 import RolePermissionMatrix from "./pages/RolePermissionMatrix";
 import PaymentError from "./pages/PaymentError";
 import ErrorStateTester from "./pages/ErrorStateTester";
-import ComponentShowcase from "./pages/ComponentShowcase";
 
 const withProtection = (
   component: ReactNode,
@@ -43,6 +42,10 @@ export const router = createBrowserRouter([
   {
     path: "/dashboard",
     element: withProtection(<Dashboard />),
+  },
+  {
+    path: "/kitchen",
+    element: withProtection(<KitchenScreen />),
   },
   {
     path: "/bill/:tableId",
@@ -73,10 +76,6 @@ export const router = createBrowserRouter([
     element: withProtection(<ErrorStateTester />),
   },
   {
-    path: "/components",
-    element: withProtection(<ComponentShowcase />),
-  },
-  {
     path: "/split-payment/:tableId",
     element: withProtection(<SplitPayment />),
   },
@@ -103,10 +102,6 @@ export const router = createBrowserRouter([
   {
     path: "/terminal-management",
     element: withProtection(<TerminalManagement />),
-  },
-  {
-    path: "/table-operations",
-    element: withProtection(<TableOperations />),
   },
   {
     path: "/end-of-day",

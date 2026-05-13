@@ -3,10 +3,10 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
-  Alert,
   FlatList,
   ListRenderItemInfo,
   Pressable,
@@ -20,6 +20,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { getBackendErrorMessage } from "../../../api/http/api-client";
 import { BottomActionBar } from "../../../components/common/BottomActionBar";
 import { Button } from "../../../components/common/Button";
+import { FeedbackBanner } from "../../../components/common/FeedbackBanner";
 import { FilterChip } from "../../../components/common/FilterChip";
 import { Screen } from "../../../components/common/Screen";
 import { SectionHeader } from "../../../components/common/SectionHeader";
@@ -41,6 +42,7 @@ type CategoryOption = {
   id: string;
   label: string;
 };
+type FeedbackState = { tone: "success" | "error" | "info"; message: string } | null;
 
 const ALL_CATEGORY_ID = "all";
 
@@ -53,6 +55,8 @@ export function MenuSelectionScreen({ navigation, route }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [quantitiesByProductId, setQuantitiesByProductId] = useState<
     Record<string, number>
   >({});
@@ -105,6 +109,28 @@ export function MenuSelectionScreen({ navigation, route }: Props) {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  function showFeedback(nextFeedback: FeedbackState) {
+    setFeedback(nextFeedback);
+
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+
+    if (nextFeedback) {
+      feedbackTimerRef.current = setTimeout(() => {
+        setFeedback(null);
+      }, 3000);
+    }
+  }
 
   const categoryOptions = useMemo<CategoryOption[]>(
     () => [
@@ -224,19 +250,19 @@ export function MenuSelectionScreen({ navigation, route }: Props) {
           return nextQuantities;
         });
 
-        Alert.alert(
-          "Ürün eklendi",
-          "Seçilen ürün aktif adisyona eklendi.",
-        );
+        showFeedback({
+          message: "Ürün aktif adisyona eklendi.",
+          tone: "success",
+        });
       } catch (error) {
         console.error("[MenuSelectionScreen] Add product failed.", error);
-        Alert.alert(
-          "Ürün eklenemedi",
-          getBackendErrorMessage(
+        showFeedback({
+          message: getBackendErrorMessage(
             error,
             "Seçilen ürün aktif adisyona eklenemedi.",
           ),
-        );
+          tone: "error",
+        });
       } finally {
         setIsMutating(false);
       }
@@ -324,6 +350,15 @@ export function MenuSelectionScreen({ navigation, route }: Props) {
           title="Ürün Seçimi"
         />
 
+        {feedback ? (
+          <FeedbackBanner
+            message={feedback.message}
+            onDismiss={() => setFeedback(null)}
+            style={styles.feedbackBanner}
+            tone={feedback.tone}
+          />
+        ) : null}
+
         <View style={styles.searchShell}>
           <SearchIcon />
           <TextInput
@@ -346,7 +381,7 @@ export function MenuSelectionScreen({ navigation, route }: Props) {
         />
       </View>
     ),
-    [categoryOptions, renderCategory, searchQuery, table?.label],
+    [categoryOptions, feedback, renderCategory, searchQuery, table?.label],
   );
 
   const emptyState = useMemo(() => {
@@ -398,6 +433,7 @@ export function MenuSelectionScreen({ navigation, route }: Props) {
         <BottomActionBar>
           <Button
             onPress={() => navigation.replace(ROUTES.ORDER_DETAIL, { tableId })}
+            size="md"
             title="Siparişe Dön"
           />
         </BottomActionBar>
@@ -441,7 +477,7 @@ const ProductCard = memo(function ProductCard({
   return (
     <SurfaceCard elevated style={styles.productCard}>
       <View style={styles.productTopRow}>
-        <Text numberOfLines={2} style={styles.productName}>
+        <Text numberOfLines={1} style={styles.productName}>
           {product.name}
         </Text>
         <Text style={styles.productPrice}>{formatCurrency(product.price)}</Text>
@@ -583,6 +619,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingVertical: spacing.lg,
   },
+  feedbackBanner: {
+    marginBottom: spacing.sm,
+  },
   feedbackCopy: {
     color: colors.textSecondary,
     fontSize: typography.body.fontSize,
@@ -607,9 +646,9 @@ const styles = StyleSheet.create({
   },
   productCard: {
     marginBottom: spacing.sm,
-    minHeight: 96,
+    minHeight: 86,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   productMeta: {
     color: colors.textSecondary,
@@ -620,13 +659,13 @@ const styles = StyleSheet.create({
   productName: {
     color: colors.textPrimary,
     flex: 1,
-    fontSize: typography.body.fontSize,
+    fontSize: typography.label.fontSize,
     fontWeight: typography.bodyStrong.fontWeight,
     marginRight: spacing.md,
   },
   productPrice: {
     color: colors.textPrimary,
-    fontSize: typography.body.fontSize,
+    fontSize: typography.subtitle.fontSize,
     fontWeight: typography.subtitle.fontWeight,
   },
   quantityButton: {

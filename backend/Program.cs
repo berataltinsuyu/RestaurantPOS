@@ -203,8 +203,11 @@ if (!IsEntityFrameworkDesignTime())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
 
-    var seedService = scope.ServiceProvider.GetRequiredService<ISeedService>();
-    await seedService.SeedAsync();
+    if (ShouldSeedData(app))
+    {
+        var seedService = scope.ServiceProvider.GetRequiredService<ISeedService>();
+        await seedService.SeedAsync();
+    }
 }
 
 app.Run();
@@ -225,3 +228,19 @@ static bool IsEntityFrameworkDesignTime()
             "Microsoft.EntityFrameworkCore.Design",
             StringComparison.OrdinalIgnoreCase));
 }
+
+static bool ShouldSeedData(WebApplication app)
+{
+    if (app.Environment.IsDevelopment())
+    {
+        return true;
+    }
+
+    return IsEnabled(app.Configuration["ENABLE_SEED_DATA"]) ||
+           IsEnabled(app.Configuration["SEED_DATA_ENABLED"]);
+}
+
+static bool IsEnabled(string? value) =>
+    string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+    string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);

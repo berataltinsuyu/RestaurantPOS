@@ -93,6 +93,10 @@ export class TablesService {
     return this.gateway.openTable(input);
   }
 
+  closeEmptyBill(tableId: string) {
+    return this.gateway.closeEmptyBill(tableId);
+  }
+
   moveTable(input: MoveTableInput) {
     return this.gateway.moveTable(input);
   }

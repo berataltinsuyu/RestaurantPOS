@@ -1,4 +1,4 @@
-import { Search, Bell, ChevronDown, Wifi, Menu, LogOut, Shield } from 'lucide-react';
+import { ChevronDown, Menu, LogOut, Shield } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,6 @@ interface TopBarProps {
   branchCode?: string;
   userName?: string;
   userRole?: string;
-  terminalStatus?: 'online' | 'offline';
   onMenuClick?: () => void;
 }
 
@@ -24,7 +23,6 @@ export function TopBar({
   branchCode,
   userName,
   userRole,
-  terminalStatus = 'online',
   onMenuClick
 }: TopBarProps) {
   const { session, logout } = useAuth();
@@ -55,30 +53,6 @@ export function TopBar({
 
       {/* Right Section */}
       <div className="flex items-center gap-2 lg:gap-6">
-        {/* Search - Hidden on mobile */}
-        <div className="relative hidden md:block">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Ara..."
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-48 lg:w-64 focus:outline-none focus:ring-2 focus:ring-[#d4a017]/20 focus:border-[#d4a017]"
-          />
-        </div>
-
-        {/* Terminal Status */}
-        <div className="flex items-center gap-1.5 lg:gap-2 px-2 lg:px-3 py-1.5 lg:py-2 bg-green-50 rounded-lg">
-          <Wifi className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-green-600" />
-          <span className="text-xs font-medium text-green-700 hidden sm:inline">
-            {terminalStatus === 'online' ? 'Terminal Bağlı' : 'Terminal Bağlı Değil'}
-          </span>
-        </div>
-
-        {/* Notifications */}
-        <button className="relative p-2 hover:bg-gray-100 rounded-lg">
-          <Bell className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
-
         {/* User Menu - Simplified on mobile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

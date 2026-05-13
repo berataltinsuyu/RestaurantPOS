@@ -272,10 +272,16 @@ export const toUiTimelineDetail = (detail?: string | null) => {
 
 export const toUiBillItemStatus = (status: BillItemDto["status"]) => {
   switch (status) {
+    case "SiparisAlindi":
+      return "Sipariş Alındı";
     case "Hazirlaniyor":
       return "Hazırlanıyor";
+    case "Hazir":
+      return "Hazır";
+    case "TeslimEdildi":
+      return "Teslim Edildi";
     case "ServisEdildi":
-      return "Servis Edildi";
+      return "Teslim Edildi";
     case "Iptal":
       return "İptal";
     case "Ikram":

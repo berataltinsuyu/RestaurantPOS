@@ -1,4 +1,4 @@
-import { OrderDetail } from "../types/domain";
+import { BillItemStatusCode, OrderDetail } from "../types/domain";
 
 function normalizeCurrencyAmount(amount: number | null | undefined) {
   const parsed = Number(amount);
@@ -47,4 +47,24 @@ export function getOrderPaymentSummary(order: OrderDetail) {
 export function roundCurrency(amount: number | null | undefined) {
   const normalizedAmount = normalizeCurrencyAmount(amount);
   return Math.round(normalizedAmount * 100) / 100;
+}
+
+export function formatOrderLineStatus(status?: BillItemStatusCode) {
+  switch (status) {
+    case 5:
+      return "Sipariş Alındı";
+    case 1:
+      return "Hazırlanıyor";
+    case 6:
+      return "Hazır";
+    case 7:
+    case 2:
+      return "Teslim Edildi";
+    case 3:
+      return "İptal";
+    case 4:
+      return "İkram";
+    default:
+      return null;
+  }
 }

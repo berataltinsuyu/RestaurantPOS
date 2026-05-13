@@ -22,6 +22,7 @@ public interface ITableService
     Task<TableSummaryDto> MergeTablesAsync(int id, MergeTablesRequest request, CancellationToken cancellationToken = default);
     Task<TableSummaryDto> SplitTableAsync(int id, SplitTableRequest request, CancellationToken cancellationToken = default);
     Task<TableSummaryDto> AddReservationAsync(int id, ReservationRequest request, CancellationToken cancellationToken = default);
+    Task<TableSummaryDto> CloseEmptyBillAsync(int id, CancellationToken cancellationToken = default);
 }
 
 public class TableService(
@@ -463,6 +464,60 @@ public class TableService(
         await reservationRepository.AddAsync(reservation, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         await auditLogService.CreateAsync(currentUserService.UserId, "AddReservation", nameof(RestaurantTable), table.Id.ToString(), $"Reservation added for table {table.TableNo}.", currentUserService.IpAddress, cancellationToken);
+        return await GetByIdAsync(id, cancellationToken);
+    }
+
+    public async Task<TableSummaryDto> CloseEmptyBillAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var table = await TableQuery(includeTracking: true).FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw new NotFoundException("Table not found.");
+
+        var bill = table.CurrentBill;
+        if (!table.CurrentBillId.HasValue || bill is null || bill.Status is BillStatus.Kapandi or BillStatus.Iptal)
+        {
+            throw new ConflictException("Table does not have an active bill.");
+        }
+
+        billCalculator.Recalculate(bill);
+
+        if (bill.PaidAmount > 0)
+        {
+            throw new ConflictException("Paid bills cannot be closed with the empty bill action.");
+        }
+
+        var canCloseAsEmpty = !bill.Items.Any() || bill.TotalAmount <= 0;
+        if (!canCloseAsEmpty)
+        {
+            throw new ConflictException("Bills with unpaid items must be closed through the normal payment or cancellation flow.");
+        }
+
+        bill.Status = BillStatus.Iptal;
+        bill.ClosedAt = DateTime.UtcNow;
+        bill.Subtotal = 0;
+        bill.ManualDiscountAmount = 0;
+        bill.DiscountAmount = 0;
+        bill.ServiceCharge = 0;
+        bill.VatAmount = 0;
+        bill.TotalAmount = 0;
+        bill.PaidAmount = 0;
+        bill.RemainingAmount = 0;
+        bill.Note = string.IsNullOrWhiteSpace(bill.Note)
+            ? "Empty bill closed."
+            : $"{bill.Note} | Empty bill closed.";
+
+        billRepository.Update(bill);
+        await tableLifecycleService.SyncBillTablesAsync(bill, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await auditLogService.CreateAsync(
+            currentUserService.UserId,
+            "CloseEmptyBill",
+            nameof(RestaurantTable),
+            table.Id.ToString(),
+            $"Empty bill {bill.BillNo} closed for table {table.TableNo}.",
+            currentUserService.IpAddress,
+            cancellationToken);
+
         return await GetByIdAsync(id, cancellationToken);
     }
 

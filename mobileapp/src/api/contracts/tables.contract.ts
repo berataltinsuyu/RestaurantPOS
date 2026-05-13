@@ -10,6 +10,7 @@ export interface TablesGateway {
   listTables(): Promise<TableSummary[]>;
   getTable(tableId: string): Promise<TableSummary | null>;
   openTable(input: OpenTableInput): Promise<TableSummary>;
+  closeEmptyBill(tableId: string): Promise<TableSummary>;
   moveTable(input: MoveTableInput): Promise<TableSummary>;
   mergeTables(input: MergeTablesInput): Promise<TableSummary>;
   splitTable(input: SplitTableInput): Promise<TableSummary>;

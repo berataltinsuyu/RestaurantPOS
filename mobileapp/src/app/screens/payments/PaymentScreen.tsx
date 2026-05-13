@@ -1,6 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert,
   StyleSheet,
   Text,
   View,
@@ -10,6 +9,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { getBackendErrorMessage } from "../../../api/http/api-client";
 import { BottomActionBar } from "../../../components/common/BottomActionBar";
 import { Button } from "../../../components/common/Button";
+import { FeedbackBanner } from "../../../components/common/FeedbackBanner";
 import { InfoRow } from "../../../components/common/InfoRow";
 import { Screen } from "../../../components/common/Screen";
 import { SurfaceCard } from "../../../components/common/SurfaceCard";
@@ -37,13 +37,16 @@ type Props = NativeStackScreenProps<
 >;
 
 type PaymentSelection = "card" | "cash" | "split";
+type FeedbackState = { tone: "success" | "error" | "info"; message: string } | null;
 
 export function PaymentScreen({ navigation, route }: Props) {
   const { tableId } = route.params;
   useBillRealtimeSync(tableId);
   const paymentSubmitLockRef = useRef(false);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<PaymentSelection>("card");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
   const table = useAppStore((state) =>
     state.tables.find((candidate) => candidate.id === tableId),
   );
@@ -57,6 +60,28 @@ export function PaymentScreen({ navigation, route }: Props) {
     [order],
   );
   const collectibleAmount = order?.remainingAmount ?? paymentSummary?.total ?? 0;
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  function showFeedback(nextFeedback: FeedbackState) {
+    setFeedback(nextFeedback);
+
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+
+    if (nextFeedback) {
+      feedbackTimerRef.current = setTimeout(() => {
+        setFeedback(null);
+      }, 3200);
+    }
+  }
 
   if (!table || !order || !paymentSummary) {
     return (
@@ -149,10 +174,10 @@ export function PaymentScreen({ navigation, route }: Props) {
         error,
         "İşlem backend üzerinde tamamlanamadı. Lütfen tekrar deneyin.",
       );
-      Alert.alert(
-        "Ödeme başlatılamadı",
-        detail,
-      );
+      showFeedback({
+        message: detail,
+        tone: "error",
+      });
     } finally {
       console.info("[PaymentScreen] Payment submit finished.", {
         completed,
@@ -175,11 +200,21 @@ export function PaymentScreen({ navigation, route }: Props) {
           <Button
             disabled={collectibleAmount <= 0 || isSubmitting}
             onPress={handlePrimaryAction}
+            size="md"
             title={`${formatCurrency(currentCollectibleAmount)} Tahsil Et`}
           />
         </BottomActionBar>
       }
     >
+      {feedback ? (
+        <FeedbackBanner
+          message={feedback.message}
+          onDismiss={() => showFeedback(null)}
+          style={styles.feedbackBanner}
+          tone={feedback.tone}
+        />
+      ) : null}
+
       <SurfaceCard elevated style={styles.summaryCard}>
         <Text style={styles.tableLabel}>{formatTableLabel(currentTable.label)}</Text>
         <Text style={styles.sectionTitle}>Sipariş Özeti</Text>
@@ -315,6 +350,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.body.fontSize,
     lineHeight: typography.body.lineHeight,
+  },
+  feedbackBanner: {
+    marginBottom: spacing.sm,
   },
   methodIconFrame: {
     alignItems: "center",

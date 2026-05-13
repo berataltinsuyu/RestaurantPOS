@@ -30,6 +30,7 @@ export function AppNavigator() {
         contentStyle: {
           backgroundColor: colors.canvas,
         },
+        headerBackTitle: "",
         headerShadowVisible: false,
         headerStyle: {
           backgroundColor: colors.surface,
@@ -52,6 +53,7 @@ export function AppNavigator() {
         name={ROUTES.TABLES_OVERVIEW}
         options={{
           headerShown: false,
+          title: "Masalar",
         }}
       />
       <Stack.Screen

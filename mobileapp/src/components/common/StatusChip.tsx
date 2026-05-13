@@ -102,6 +102,6 @@ const STATUS_LABELS: Partial<Record<SupportedStatus, string>> = {
   occupied: "Dolu",
   open: "Açık",
   paid: "Ödendi",
-  paymentPending: "Bekliyor",
+  paymentPending: "Ödeme Bekliyor",
   ready: "Hazır",
 };

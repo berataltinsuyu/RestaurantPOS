@@ -71,4 +71,8 @@ public class TablesController(ITableService tableService) : ControllerBase
     [HttpPost("{id:int}/reservation")]
     public async Task<ActionResult<TableSummaryDto>> AddReservation(int id, [FromBody] ReservationRequest request, CancellationToken cancellationToken) =>
         Ok(await tableService.AddReservationAsync(id, request, cancellationToken));
+
+    [HttpPost("{id:int}/close-empty")]
+    public async Task<ActionResult<TableSummaryDto>> CloseEmptyBill(int id, CancellationToken cancellationToken) =>
+        Ok(await tableService.CloseEmptyBillAsync(id, cancellationToken));
 }

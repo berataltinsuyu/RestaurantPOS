@@ -35,6 +35,26 @@ export class MobileApiClient {
     this.authToken = token;
   }
 
+  getRequestDebugInfo(path: string) {
+    const normalizedPath = normalizeRequestPath(path);
+
+    if (!this.baseUrl) {
+      return {
+        baseUrlConfigured: false,
+        path: normalizedPath,
+        url: null,
+      };
+    }
+
+    const normalizedBaseUrl = normalizeBaseUrl(this.baseUrl);
+
+    return {
+      baseUrlConfigured: true,
+      path: normalizedPath,
+      url: buildRequestUrl(normalizedBaseUrl, normalizedPath),
+    };
+  }
+
   async request<TResponse>({
     path,
     headers,
@@ -52,11 +72,17 @@ export class MobileApiClient {
       );
     }
 
-    const normalizedBaseUrl = normalizeBaseUrl(this.baseUrl);
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    const url = `${normalizedBaseUrl}${normalizedPath}`;
+    const requestDebugInfo = this.getRequestDebugInfo(path);
+    const normalizedPath = requestDebugInfo.path;
+    const url = requestDebugInfo.url;
     const method = init.method ?? "GET";
     const requestBody = serializeLoggedBody(debugBody ?? init.body);
+
+    if (!url) {
+      throw new Error(
+        "Backend request URL could not be resolved because the backend base URL is not configured.",
+      );
+    }
 
     console.info("[MobileApiClient] Request started.", {
       hasAuthToken: Boolean(this.authToken),
@@ -260,6 +286,18 @@ function serializeLoggedBody(body: unknown) {
   }
 
   return String(body);
+}
+
+function normalizeRequestPath(path: string) {
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
+function buildRequestUrl(baseUrl: string, path: string) {
+  if (baseUrl.toLowerCase().endsWith("/api") && path.toLowerCase().startsWith("/api/")) {
+    return `${baseUrl}${path.slice(4)}`;
+  }
+
+  return `${baseUrl}${path}`;
 }
 
 function normalizeBaseUrl(baseUrl: string) {

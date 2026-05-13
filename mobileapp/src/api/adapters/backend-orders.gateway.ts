@@ -2,6 +2,7 @@ import { OrdersGateway } from "../contracts/orders.contract";
 import { MobileApiClient } from "../http/api-client";
 import {
   AddMenuProductInput,
+  BillItemStatusCode,
   MenuProduct,
   OrderDetail,
   UpdateOrderLineQuantityInput,
@@ -105,6 +106,33 @@ function mapBackendBillStatus(status: number | string): OrderDetail["status"] {
   }
 }
 
+function mapBackendBillItemStatus(status?: number | string): BillItemStatusCode | undefined {
+  if (typeof status === "number") {
+    return [1, 2, 3, 4, 5, 6, 7].includes(status)
+      ? (status as BillItemStatusCode)
+      : undefined;
+  }
+
+  switch (status) {
+    case "Hazirlaniyor":
+      return 1;
+    case "ServisEdildi":
+      return 2;
+    case "Iptal":
+      return 3;
+    case "Ikram":
+      return 4;
+    case "SiparisAlindi":
+      return 5;
+    case "Hazir":
+      return 6;
+    case "TeslimEdildi":
+      return 7;
+    default:
+      return undefined;
+  }
+}
+
 function mapBackendBillSummaryToOrderDetail(
   bill: BackendBillSummaryDto,
 ): OrderDetail {
@@ -126,6 +154,7 @@ function mapBackendBillSummaryToOrderDetail(
         itemId: item.Id ?? null,
         productId: item.ProductId ?? null,
       }),
+      status: mapBackendBillItemStatus(item.Status),
       unitPrice: toFiniteNumber(item.UnitPrice, "Item.UnitPrice", {
         ...numericContext,
         itemId: item.Id ?? null,

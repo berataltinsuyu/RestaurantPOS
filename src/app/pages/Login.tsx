@@ -29,11 +29,6 @@ export default function Login() {
       : '/dashboard';
 
   if (isBootstrapped && isAuthenticated) {
-    console.log("[LOGIN] Navigate branch hit", {
-      isBootstrapped,
-      isAuthenticated,
-      redirectTo,
-    });
     return <Navigate to={redirectTo} replace />;
   }
 
@@ -41,29 +36,15 @@ export default function Login() {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
-    console.log("[LOGIN] submit start", {
-      username: formData.username.trim(),
-      business: formData.business,
-      passwordPresent: !!formData.password,
-    });
 
     try {
-      console.log("[LOGIN] before await login");
       await login({
         branchCode: formData.business.trim(),
         userName: formData.username.trim(),
         password: formData.password,
       });
-      console.log("[LOGIN] after await login");
-      console.log("[LOGIN] isAuthenticated after login", {
-        isAuthenticated,
-        isBootstrapped,
-      });
-      console.log("[LOGIN] before navigate", { redirectTo });
       navigate(redirectTo, { replace: true });
-      console.log("[LOGIN] after navigate call", { redirectTo });
     } catch (error) {
-      console.error("[LOGIN] login error", error);
       setErrorMessage(getErrorMessage(error, 'Giriş yapılamadı.'));
     } finally {
       setIsSubmitting(false);
@@ -145,7 +126,7 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -153,9 +134,6 @@ export default function Login() {
                 />
                 <span className="text-gray-600">Beni Hatırla</span>
               </label>
-              <a href="#" className="text-[#d4a017] hover:underline font-medium">
-                Şifremi Unuttum
-              </a>
             </div>
 
             {errorMessage && (
@@ -182,25 +160,6 @@ export default function Login() {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-xs text-center text-gray-500">
-              Güvenli Bağlantı • 256-bit SSL Şifreleme
-            </p>
-          </div>
-        </div>
-
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
-            Destek almak için{' '}
-            <a href="#" className="text-[#d4a017] hover:underline font-medium">
-              0850 222 0 724
-            </a>
-          </p>
-        </div>
-
-        <div className="text-center mt-8 text-xs text-gray-500">
-          © 2026 VakıfBank A.Ş. Tüm hakları saklıdır.
         </div>
       </div>
     </div>

@@ -246,7 +246,7 @@ public class BillService(
             Quantity = request.Quantity,
             LineTotal = Math.Round(product.Price * request.Quantity, 2, MidpointRounding.AwayFromZero),
             Note = request.Note,
-            Status = BillItemStatus.Hazirlaniyor
+            Status = BillItemStatus.SiparisAlindi
         };
 
         await billItemRepository.AddAsync(billItem, cancellationToken);
