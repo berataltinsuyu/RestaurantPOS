@@ -1,16 +1,30 @@
 # RestaurantPOS
 
-RestaurantPOS, restoran ve kafe operasyonları için geliştirilen full-stack POS ve adisyon yönetim sistemidir. Proje; web yönetim paneli, mobil garson uygulaması, ASP.NET Core Web API backend, Supabase PostgreSQL veritabanı, masa/adisyon yönetimi, mutfak ekranı, ödeme akışları, menü yönetimi ve Excel ile toplu menü aktarımı modüllerinden oluşur.
+RestaurantPOS, restoran ve kafe operasyonları için geliştirilen full-stack POS ve adisyon yönetim sistemidir. Proje; web yönetim paneli, mobil garson uygulaması, ASP.NET Core Web API backend, Supabase PostgreSQL veritabanı, masa/adisyon yönetimi, mutfak ekranı, ödeme akışları, menü yönetimi ve Excel ile toplu menü aktarımı modüllerinden oluşur. Bu proje, VakıfBank Ödeme Sistemleri Uygulama Geliştirme departmanındaki staj sürecinde geliştirilmiştir. Restoran/kafe POS süreçleri, adisyon yönetimi, ödeme akışları ve mobil garson/POS kullanım senaryolarını modellemek amacıyla hazırlanmıştır.
 
 ---
 
 ## Türkçe
 
+### Canlı Demo
+
+- Canlı frontend: https://restaurant-pos-pink.vercel.app
+- Backend Swagger: Render üzerinde yayınlanan backend adresinin `/swagger` endpointi
+- Demo kullanıcıları:
+
+| Rol | Kullanıcı adı | Şifre |
+| --- | --- | --- |
+| Garson | `ahmet` | `Ahmet123!` |
+| Garson | `ayse` | `Ayse123!` |
+| Kasiyer | `kasiyer` | `Kasiyer123!` |
+| Şube Müdürü | `mudur` | `Mudur123!` |
+| Sistem Yöneticisi | `admin` | `Admin123!` |
+
+Render backend ücretsiz/uyuyan servis mantığıyla çalışabileceği için ilk giriş veya ilk API isteği birkaç saniye sürebilir. Kart ödeme, terminal bağlantısı ve bazı POS süreçleri demo/mock akışlarla simüle edilmektedir.
+
 ### Proje Özeti
 
 RestaurantPOS; restoran, kafe ve benzeri işletmelerde masa operasyonlarını, adisyon süreçlerini, sipariş hazırlık durumlarını, ödeme kayıtlarını ve menü yönetimini tek bir sistem altında toplamak için geliştirilmiştir.
-
-Bu proje, VakıfBank Ödeme Sistemleri Uygulama Geliştirme departmanındaki staj sürecinde geliştirilmiştir. Restoran/kafe POS süreçleri, adisyon yönetimi, ödeme akışları ve mobil garson/POS kullanım senaryolarını modellemek amacıyla hazırlanmıştır.
 
 Proje kapsamı:
 
@@ -28,53 +42,30 @@ Sistem hem yönetici/kasa tarafındaki web ekranlarını hem de garsonların sah
 
 #### Web POS Paneli
 
-- JWT tabanlı giriş ve oturum yönetimi
-- Rol bazlı kullanıcı yapısı
-- Masa planı ve hızlı masa işlemleri
-- Masa açma, taşıma, birleştirme ve ayırma
-- Adisyon oluşturma ve yönetme
-- Adisyon detayı ekranı
-- Ürün ekleme, adet değiştirme ve ürün silme
+- JWT tabanlı giriş, rol bazlı kullanıcı yapısı ve yetki matrisi
+- Masa planı; masa açma, taşıma, birleştirme ve ayırma
+- Adisyon oluşturma, detay yönetimi ve ürün satırı işlemleri
 - Nakit, kart ve bölünmüş ödeme akışları
-- Mutfak ekranı ve sipariş hazırlık takibi
+- Mutfak ekranı ve sipariş hazırlık durumu takibi
 - Sipariş durum takibi: Sipariş Alındı, Hazırlanıyor, Hazır, Teslim Edildi
-- İşlem geçmişi
-- İade ve iptal işlemleri
-- Terminal yönetimi
-- Gün sonu mutabakatı
-- Gün sonu ve işlem geçmişi ekranlarında operasyonel verilerin dökümante edilmesi ve indirilebilir rapor/çıktı olarak alınabilmesi
-- Raporlar ve grafikler
-- Menü yönetimi
-- Excel’den ürün/kategori aktarımı
-- Excel şablon indirme
-- Kategori tekrarlarını engelleyen import mantığı
-- Rezervasyon yönetimi
-- İkram onayı
-- Rol ve yetki matrisi
-- Ayarlar, kullanıcı, terminal, yazıcı ve entegrasyon ayarları
+- İşlem geçmişi, iade/iptal ve operasyon kayıtları
+- Terminal yönetimi, yazıcı ve entegrasyon ayarları
+- Gün sonu mutabakatı ve indirilebilir rapor/çıktılar
+- Raporlar, grafikler ve operasyonel özetler
+- Menü yönetimi, Excel import ve şablon indirme
+- Rezervasyon yönetimi ve ikram onayı
 
 #### Mobil Garson Uygulaması
 
-- Expo / React Native tabanlı mobil uygulama
-- Garson girişi
-- Masa planı görüntüleme
-- Masa durumu takibi
-- Masa açma
-- Masa işlemleri
-- Masa işlemleri ekranı
-- Masa detayı
-- Sipariş/adisyon detayı
-- Ürün seçimi
-- Kategori filtreleme
-- Ürün arama
-- Adet seçerek ürün ekleme
-- Ödeme ekranı
-- Nakit ödeme
-- Kart / temassız ödeme akışı
-- Bölünmüş ödeme ekranı
-- Bölünmüş ödeme ekranı ve ödeme paylaştırma akışı
+- Expo / React Native tabanlı garson/POS uygulaması
+- Garson girişi ve rol odaklı kullanım
+- Masa planı, masa durumu ve masa açma akışları
+- Masa işlemleri ve masa/adisyon detay ekranları
+- Ürün seçimi, kategori filtreleme ve ürün arama
+- Adet seçerek adisyona ürün ekleme
+- Nakit, kart/temassız ve bölünmüş ödeme ekranları
 - Web mutfak ekranıyla senkron sipariş durumu
-- Supabase üzerinden canlı veri okuma
+- Supabase üzerinden canlı veri okuma ve realtime görünürlük
 - Backend API üzerinden gerçek yazma işlemleri
 
 Mobil uygulama; masa, adisyon, ürün seçimi ve ödeme adımlarını sahada kullanılabilecek kompakt bir akış olarak sunar. Supabase üzerinden canlı veri okuma ve realtime senkronizasyon güncel veri görünürlüğü sağlar; masa açma, ürün ekleme, ödeme tamamlama gibi kritik yazma işlemleri backend API üzerinden yapılır.
@@ -170,50 +161,35 @@ Expo mobile app
 
 ### Veritabanı ve Süreç Yapısı
 
-Tam SQL scripti README içinde tutulmaz. Veritabanı EF Core migration yapısı ve Supabase PostgreSQL şeması üzerinden yönetilir.
-
 #### 1. İş Yeri ve Kullanıcı Yönetimi
 
-- `Branches`
-- `Users`
-- `Roles`
-- `Permissions`
-- `RolePermissions`
-- `AppSettings`
+`Branches`, `Users`, `Roles`, `Permissions`, `RolePermissions`, `AppSettings`
 
-Bu grup şube, kullanıcı, rol, yetki ve uygulama ayarı yönetimini kapsar.
+Şube, kullanıcı, rol, yetki ve uygulama ayarı yönetimini kapsar.
 
 #### 2. Masa ve Adisyon Yönetimi
 
-- `RestaurantTables`
-- `Bills`
-- `BillItems`
-- `TableReservations`
+`RestaurantTables`, `Bills`, `BillItems`, `TableReservations`
 
-Bu grup masa durumu, aktif adisyon, adisyon satırları ve rezervasyon süreçlerini yönetir.
+Masa durumu, aktif adisyon, adisyon satırları ve rezervasyon süreçlerini yönetir.
 
 #### 3. Ürün ve Menü Yönetimi
 
-- `ProductCategories`
-- `Products`
+`ProductCategories`, `Products`
 
-Bu grup ürün, kategori, menü görünürlüğü ve Excel import süreçlerinin temelini oluşturur.
+Ürün, kategori, menü görünürlüğü ve Excel import süreçlerinin temelini oluşturur.
 
 #### 4. Ödeme ve POS Terminal Süreçleri
 
-- `Payments`
-- `PosTerminals`
-- `Shifts`
-- `PrinterSettings`
+`Payments`, `PosTerminals`, `Shifts`, `PrinterSettings`
 
-Bu grup ödeme kayıtları, terminal bilgileri, vardiya süreçleri ve yazıcı ayarlarını kapsar.
+Ödeme kayıtları, terminal bilgileri, vardiya süreçleri ve yazıcı ayarlarını kapsar.
 
 #### 5. Denetim ve Operasyon Kayıtları
 
-- `AuditLogs`
-- `__EFMigrationsHistory`
+`AuditLogs`
 
-Bu grup kritik operasyon kayıtları ve EF Core migration geçmişi için kullanılır.
+Kritik operasyon kayıtları için kullanılır.
 
 #### Temel İlişkiler
 
@@ -223,15 +199,12 @@ Bu grup kritik operasyon kayıtları ve EF Core migration geçmişi için kullan
 - `BillItems`, adisyon satırlarını ürün snapshot bilgisiyle saklar.
 - `Products`, `ProductCategories` tablosuna bağlıdır.
 - `Payments`, `Bills`, `Users` ve `PosTerminals` ile ilişkilidir.
-- `RolePermissions`, rollerin hangi yetkilere sahip olduğunu yönetir.
-- `AuditLogs`, kritik operasyon kayıtlarını tutar.
-- `TableReservations`, masa rezervasyonlarını tutar.
-
-Veritabanı şeması, aşağıdaki ekran görüntüleri bölümünde ayrıca gösterilmiştir.
+- `RolePermissions`, rol-yetki eşleşmelerini yönetir.
+- `AuditLogs` kritik operasyon kayıtlarını, `TableReservations` masa rezervasyonlarını tutar.
 
 ### Ekran Görüntüleri
 
-Aşağıdaki ekran görüntüleri, web paneli, mobil garson uygulaması ve veritabanı yapısının temel bölümlerini göstermektedir.
+Aşağıdaki ekran görüntüleri, web paneli ve mobil garson uygulamasının temel bölümlerini göstermektedir.
 
 #### Web Screenshots
 
@@ -261,10 +234,6 @@ Aşağıdaki ekran görüntüleri, web paneli, mobil garson uygulaması ve verit
 | Mobil Ödeme | `docs/screenshots/mobile-payment.png` |
 | Mobil Bölünmüş Ödeme | `docs/screenshots/mobile-split-payment.png` |
 | Mobil Temassız Ödeme Bekleme | `docs/screenshots/mobile-contactless-payment.png` |
-
-#### Database Diagram
-
-![Database Schema](docs/screenshots/database-schema.png)
 
 ### Proje Yapısı
 
@@ -348,36 +317,29 @@ EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 EXPO_PUBLIC_BACKEND_BASE_URL=
 ```
 
-### Canlı Demo / Demo Kullanım
-
-- Canlı frontend: https://restaurant-pos-pink.vercel.app
-- Backend Swagger: Render üzerinde yayınlanan backend adresinin `/swagger` endpointi
-- Demo giriş bilgileri:
-
-| Rol / Kullanıcı | Kullanıcı adı | Şifre |
-| --- | --- | --- |
-| Garson | `ahmet` | `Ahmet123!` |
-| Garson | `ayse` | `Ayse123!` |
-| Kasiyer | `kasiyer` | `Kasiyer123!` |
-| Şube Müdürü | `mudur` | `Mudur123!` |
-| Sistem Yöneticisi | `admin` | `Admin123!` |
-
-- Bu bilgiler yalnızca portfolyo/teknik inceleme amacıyla hazırlanmış demo kullanıcılarıdır.
-- Frontend Vercel üzerinde, backend Render üzerinde, veritabanı Supabase üzerinde çalışmaktadır.
-- Render backend ücretsiz/uyuyan servis mantığıyla çalışabileceği için ilk giriş veya ilk API isteği birkaç saniye sürebilir.
-- İlk denemede gecikme yaşanırsa kısa süre bekleyip tekrar denenebilir.
-- Ödeme alma ekranları ve terminal yönetimi ekranı şu an için gerçek banka/POS entegrasyonu içermeyen UI/mockup niteliğindedir.
-- Kart ödeme, terminal bağlantısı ve bazı POS süreçleri demo/mock akışlarla simüle edilmektedir.
-- Nakit ödeme ve temel backend ödeme kayıt süreçleri çalışmaktadır.
-- Gerçek banka entegrasyonu production seviyesinde implement edilmemiştir.
-
 ### Güvenlik ve Production Notu
 
-Bu proje portfolyo/staj projesi niteliğindedir. Finalize edilmiş production ürünü değildir. README içinde yer alan demo kullanıcıları production hesabı değildir; yalnızca teknik inceleme ve portfolyo gösterimi için hazırlanmıştır. RLS/policy, gerçek POS entegrasyonu, test kapsamı, monitoring, rate limiting ve operasyonel güvenlik daha da geliştirilebilir.
+Bu proje portfolyo/staj projesi niteliğindedir. Finalize edilmiş production ürünü değildir. README içinde yer alan demo kullanıcıları production hesabı değildir; yalnızca teknik inceleme ve portfolyo gösterimi için hazırlanmıştır. Ödeme alma ekranları ve terminal yönetimi gerçek banka/POS entegrasyonu içermeyen demo akışlardır; nakit ödeme ve temel backend ödeme kayıt süreçleri çalışmaktadır. RLS/policy, gerçek POS entegrasyonu, test kapsamı, monitoring, rate limiting ve operasyonel güvenlik daha da geliştirilebilir.
 
 ---
 
 ## English
+
+### Live Demo
+
+- Live frontend: https://restaurant-pos-pink.vercel.app
+- Backend Swagger: available through the `/swagger` endpoint of the deployed Render backend URL
+- Demo accounts:
+
+| Role | Username | Password |
+| --- | --- | --- |
+| Waiter | `ahmet` | `Ahmet123!` |
+| Waiter | `ayse` | `Ayse123!` |
+| Cashier | `kasiyer` | `Kasiyer123!` |
+| Branch Manager | `mudur` | `Mudur123!` |
+| System Administrator | `admin` | `Admin123!` |
+
+Because the Render backend may run as a free/sleeping service, the first login or first API request can take a few seconds. Card payment, terminal connection and some POS flows are simulated through demo/mock flows.
 
 ### Project Overview
 
@@ -401,53 +363,30 @@ The system is designed to support both web-based management/cashier workflows an
 
 #### Web POS Panel
 
-- JWT-based authentication
-- Role-based user structure
-- Table plan and quick table operations
-- Open, move, merge and split tables
-- Create and manage bills
-- Bill detail screen
-- Add products, change quantities and remove items
+- JWT-based authentication, role-based users and permission matrix
+- Table plan with open, move, merge and split operations
+- Bill creation, bill detail management and item operations
 - Cash, card and split payment flows
 - Kitchen screen and order preparation tracking
 - Order status tracking: Order Received, Preparing, Ready, Delivered
-- Transaction history
-- Refund and cancellation workflows
-- Terminal management
-- End-of-day reconciliation
-- Downloadable/exportable operational records from end-of-day and transaction history screens
-- Reports and charts
-- Menu management
-- Product/category import from Excel
-- Excel template download
-- Import logic that prevents duplicate category creation
-- Reservations
-- Complimentary item approval
-- Role and permission matrix
-- Settings for users, terminals, printers and integrations
+- Transaction history, refunds/cancellations and operational records
+- Terminal management, printer and integration settings
+- End-of-day reconciliation with downloadable/exportable records
+- Reports, charts and operational summaries
+- Menu management, Excel import and template download
+- Reservations and complimentary item approval
 
 #### Mobile Waiter Application
 
-- Expo / React Native mobile application
-- Waiter login
-- Table plan view
-- Table status tracking
-- Open table flow
-- Table operations
-- Table actions screen
-- Table detail screen
-- Order/bill detail screen
-- Product selection
-- Category filtering
-- Product search
-- Add products with selected quantity
-- Payment screen
-- Cash payment
-- Card / contactless payment flow
-- Split payment screen
-- Split payment screen and payment allocation flow
+- Expo / React Native waiter/POS application
+- Waiter login and role-focused usage
+- Table plan, table status and open-table flows
+- Table actions and table/bill detail screens
+- Product selection, category filtering and product search
+- Add products to bills with selected quantities
+- Cash, card/contactless and split payment screens
 - Order status synchronized with the web kitchen screen
-- Live data reads through Supabase
+- Live data reads and realtime visibility through Supabase
 - Real write operations through the backend API
 
 The mobile app provides a compact operational flow for table, bill, product selection and payment steps. Supabase live reads and realtime synchronization provide up-to-date data visibility, while critical write operations such as opening tables, adding items and completing payments go through the backend API.
@@ -547,46 +486,33 @@ The full SQL script is intentionally not embedded in this README. The schema is 
 
 #### 1. Business and User Management
 
-- `Branches`
-- `Users`
-- `Roles`
-- `Permissions`
-- `RolePermissions`
-- `AppSettings`
+`Branches`, `Users`, `Roles`, `Permissions`, `RolePermissions`, `AppSettings`
 
-This group covers branch, user, role, permission and application setting management.
+Branch, user, role, permission and application setting management.
 
 #### 2. Table and Bill Management
 
-- `RestaurantTables`
-- `Bills`
-- `BillItems`
-- `TableReservations`
+`RestaurantTables`, `Bills`, `BillItems`, `TableReservations`
 
-This group manages table status, active bills, bill line items and reservations.
+Table status, active bills, bill line items and reservations.
 
 #### 3. Product and Menu Management
 
-- `ProductCategories`
-- `Products`
+`ProductCategories`, `Products`
 
-This group is the basis for product records, categories, menu availability and Excel import flows.
+Product records, categories, menu availability and Excel import flows.
 
 #### 4. Payment and POS Terminal Processes
 
-- `Payments`
-- `PosTerminals`
-- `Shifts`
-- `PrinterSettings`
+`Payments`, `PosTerminals`, `Shifts`, `PrinterSettings`
 
-This group covers payment records, terminal information, shift operations and printer settings.
+Payment records, terminal information, shift operations and printer settings.
 
 #### 5. Audit and Operational Records
 
-- `AuditLogs`
-- `__EFMigrationsHistory`
+`AuditLogs`, `__EFMigrationsHistory`
 
-This group is used for critical operation logs and EF Core migration history.
+Critical operation logs and EF Core migration history.
 
 #### Core Relationships
 
@@ -596,15 +522,12 @@ This group is used for critical operation logs and EF Core migration history.
 - `BillItems` stores bill line items with product snapshot data.
 - `Products` belongs to `ProductCategories`.
 - `Payments` relates to `Bills`, `Users` and `PosTerminals`.
-- `RolePermissions` controls which permissions each role has.
-- `AuditLogs` stores critical operation records.
-- `TableReservations` stores table reservations.
-
-The database schema is shown separately in the screenshots section below.
+- `RolePermissions` controls role-permission mappings.
+- `AuditLogs` stores critical operation records, and `TableReservations` stores table reservations.
 
 ### Screenshots
 
-The following screenshots show the main parts of the web panel, mobile waiter application and database structure.
+The following screenshots show the main parts of the web panel and mobile waiter application.
 
 #### Web Screenshots
 
@@ -634,10 +557,6 @@ The following screenshots show the main parts of the web panel, mobile waiter ap
 | Mobile Payment | `docs/screenshots/mobile-payment.png` |
 | Mobile Split Payment | `docs/screenshots/mobile-split-payment.png` |
 | Mobile Contactless Payment Waiting | `docs/screenshots/mobile-contactless-payment.png` |
-
-#### Database Diagram
-
-![Database Schema](docs/screenshots/database-schema.png)
 
 ### Project Structure
 
@@ -719,29 +638,6 @@ EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 EXPO_PUBLIC_BACKEND_BASE_URL=
 ```
 
-### Live Demo / Demo Usage
-
-- Live frontend: https://restaurant-pos-pink.vercel.app
-- Backend Swagger is available through the `/swagger` endpoint of the deployed Render backend URL.
-- Demo accounts:
-
-| Role / User | Username | Password |
-| --- | --- | --- |
-| Waiter | `ahmet` | `Ahmet123!` |
-| Waiter | `ayse` | `Ayse123!` |
-| Cashier | `kasiyer` | `Kasiyer123!` |
-| Branch Manager | `mudur` | `Mudur123!` |
-| System Administrator | `admin` | `Admin123!` |
-
-- The listed accounts are demo users prepared only for portfolio and technical review purposes.
-- The frontend is hosted on Vercel, the backend is hosted on Render, and the database runs on Supabase.
-- Because the Render backend may run as a free/sleeping service, the first login or first API request can take a few seconds.
-- If the first attempt feels delayed, wait briefly and try again.
-- Payment collection screens and terminal management screens are currently UI/mockup flows without a real bank/POS integration.
-- Card payment, terminal connection and some POS-related processes are simulated through demo/mock flows.
-- Cash payment and core backend payment record flows are functional.
-- A production-grade bank integration has not been implemented.
-
 ### Security and Production Note
 
-This project is a portfolio/internship project. It is not a finalized production product. The demo users listed in this README are not production accounts; they are prepared only for technical review and portfolio demonstration. RLS/policies, real POS integration, test coverage, monitoring, rate limiting and operational security can be improved further before production use.
+This project is a portfolio/internship project. It is not a finalized production product. The demo users listed in this README are not production accounts; they are prepared only for technical review and portfolio demonstration. Payment collection screens and terminal management are demo flows without a real bank/POS integration; cash payment and core backend payment record flows are functional. RLS/policies, real POS integration, test coverage, monitoring, rate limiting and operational security can be improved further before production use.
