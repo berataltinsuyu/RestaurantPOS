@@ -195,11 +195,28 @@ Aşağıdaki ekran görüntüleri, web paneli ve mobil garson uygulamasının te
 
 #### Web Ekranları
 
-| Dashboard / Masa Planı | Adisyon Detayı |
-| --- | --- |
-| ![Dashboard / Masa Planı](docs/screenshots/web-dashboard.png) | ![Adisyon Detayı](docs/screenshots/web-bill-detail.png) |
-| Ödeme Ekranı | Mutfak Ekranı |
-| ![Ödeme Ekranı](docs/screenshots/web-payment-screen.png) | ![Mutfak Ekranı](docs/screenshots/web-kitchen.png) |
+<table>
+  <tr>
+    <td align="center">
+      <strong>Dashboard / Masa Planı</strong><br/>
+      <img src="docs/screenshots/web-dashboard.png" width="420"/>
+    </td>
+    <td align="center">
+      <strong>Adisyon Detayı</strong><br/>
+      <img src="docs/screenshots/web-bill-detail.png" width="420"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Ödeme Ekranı</strong><br/>
+      <img src="docs/screenshots/web-payment-screen.png" width="420"/>
+    </td>
+    <td align="center">
+      <strong>Mutfak Ekranı</strong><br/>
+      <img src="docs/screenshots/web-kitchen.png" width="420"/>
+    </td>
+  </tr>
+</table>
 
 Diğer web ekranları:
 
@@ -214,11 +231,26 @@ Diğer web ekranları:
 
 #### Mobil Ekranlar
 
-| Mobil Masa Planı | Mobil Ürün Seçimi |
-| --- | --- |
-| ![Mobil Masa Planı](docs/screenshots/mobile-tables.png) | ![Mobil Ürün Seçimi](docs/screenshots/mobile-product-selection.png) |
-| Mobil Ödeme | Mobil Bölünmüş Ödeme |
-| ![Mobil Ödeme](docs/screenshots/mobile-payment.png) | ![Mobil Bölünmüş Ödeme](docs/screenshots/mobile-split-payment.png) |
+<table>
+  <tr>
+    <td align="center">
+      <strong>Mobil Masa Planı</strong><br/>
+      <img src="docs/screenshots/mobile-tables.png" width="160"/>
+    </td>
+    <td align="center">
+      <strong>Mobil Ürün Seçimi</strong><br/>
+      <img src="docs/screenshots/mobile-product-selection.png" width="160"/>
+    </td>
+    <td align="center">
+      <strong>Mobil Ödeme</strong><br/>
+      <img src="docs/screenshots/mobile-payment.png" width="160"/>
+    </td>
+    <td align="center">
+      <strong>Mobil Bölünmüş Ödeme</strong><br/>
+      <img src="docs/screenshots/mobile-split-payment.png" width="160"/>
+    </td>
+  </tr>
+</table>
 
 Diğer mobil ekranlar:
 
@@ -507,11 +539,28 @@ The following screenshots show the main parts of the web panel and mobile waiter
 
 #### Web Screenshots
 
-| Dashboard / Table Plan | Bill Detail |
-| --- | --- |
-| ![Dashboard / Table Plan](docs/screenshots/web-dashboard.png) | ![Bill Detail](docs/screenshots/web-bill-detail.png) |
-| Payment Screen | Kitchen Screen |
-| ![Payment Screen](docs/screenshots/web-payment-screen.png) | ![Kitchen Screen](docs/screenshots/web-kitchen.png) |
+<table>
+  <tr>
+    <td align="center">
+      <strong>Dashboard / Table Plan</strong><br/>
+      <img src="docs/screenshots/web-dashboard.png" width="420"/>
+    </td>
+    <td align="center">
+      <strong>Bill Detail</strong><br/>
+      <img src="docs/screenshots/web-bill-detail.png" width="420"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Payment Screen</strong><br/>
+      <img src="docs/screenshots/web-payment-screen.png" width="420"/>
+    </td>
+    <td align="center">
+      <strong>Kitchen Screen</strong><br/>
+      <img src="docs/screenshots/web-kitchen.png" width="420"/>
+    </td>
+  </tr>
+</table>
 
 Other web screens:
 
@@ -526,11 +575,26 @@ Other web screens:
 
 #### Mobile Screenshots
 
-| Mobile Table Plan | Mobile Product Selection |
-| --- | --- |
-| ![Mobile Table Plan](docs/screenshots/mobile-tables.png) | ![Mobile Product Selection](docs/screenshots/mobile-product-selection.png) |
-| Mobile Payment | Mobile Split Payment |
-| ![Mobile Payment](docs/screenshots/mobile-payment.png) | ![Mobile Split Payment](docs/screenshots/mobile-split-payment.png) |
+<table>
+  <tr>
+    <td align="center">
+      <strong>Mobile Table Plan</strong><br/>
+      <img src="docs/screenshots/mobile-tables.png" width="160"/>
+    </td>
+    <td align="center">
+      <strong>Mobile Product Selection</strong><br/>
+      <img src="docs/screenshots/mobile-product-selection.png" width="160"/>
+    </td>
+    <td align="center">
+      <strong>Mobile Payment</strong><br/>
+      <img src="docs/screenshots/mobile-payment.png" width="160"/>
+    </td>
+    <td align="center">
+      <strong>Mobile Split Payment</strong><br/>
+      <img src="docs/screenshots/mobile-split-payment.png" width="160"/>
+    </td>
+  </tr>
+</table>
 
 Other mobile screens:
 
