@@ -1,6 +1,8 @@
 # RestaurantPOS
 
-RestaurantPOS, restoran ve kafe operasyonları için geliştirilen full-stack POS ve adisyon yönetim sistemidir. Proje; web yönetim paneli, mobil garson uygulaması, ASP.NET Core Web API backend, Supabase PostgreSQL veritabanı, masa/adisyon yönetimi, mutfak ekranı, ödeme akışları, menü yönetimi ve Excel ile toplu menü aktarımı modüllerinden oluşur. Bu proje, VakıfBank Ödeme Sistemleri Uygulama Geliştirme departmanındaki staj sürecinde geliştirilmiştir. Restoran/kafe POS süreçleri, adisyon yönetimi, ödeme akışları ve mobil garson/POS kullanım senaryolarını modellemek amacıyla hazırlanmıştır.
+RestaurantPOS, restoran ve kafe operasyonları için geliştirilen full-stack POS ve adisyon yönetim sistemidir.
+
+Proje; web yönetim paneli, mobil garson uygulaması, ASP.NET Core Web API backend, Supabase PostgreSQL veritabanı, masa/adisyon yönetimi, mutfak ekranı, ödeme akışları, menü yönetimi ve Excel ile toplu menü aktarımı modüllerinden oluşur. Bu proje, VakıfBank Ödeme Sistemleri Uygulama Geliştirme departmanındaki staj sürecinde geliştirilmiş ve restoran/kafe POS senaryolarını modellemek amacıyla hazırlanmıştır.
 
 ---
 
@@ -147,18 +149,6 @@ EF Core Service + Repository Layer
 Supabase PostgreSQL
 ```
 
-Mobil canlı okuma ve senkron görünürlük:
-
-```text
-Supabase PostgreSQL
-      |
-      v
-Supabase live reads / realtime sync
-      |
-      v
-Expo mobile app
-```
-
 ### Veritabanı ve Süreç Yapısı
 
 #### 1. İş Yeri ve Kullanıcı Yönetimi
@@ -193,47 +183,48 @@ Kritik operasyon kayıtları için kullanılır.
 
 #### Temel İlişkiler
 
-- `Branches` birçok kullanıcı, masa, terminal, ayar ve shift kaydına bağlıdır.
-- `RestaurantTables` aktif adisyonu `CurrentBillId` ile `Bills` tablosuna bağlar.
-- `Bills`, masa, şube, garson ve ödeme toplamlarını tutar.
-- `BillItems`, adisyon satırlarını ürün snapshot bilgisiyle saklar.
-- `Products`, `ProductCategories` tablosuna bağlıdır.
-- `Payments`, `Bills`, `Users` ve `PosTerminals` ile ilişkilidir.
-- `RolePermissions`, rol-yetki eşleşmelerini yönetir.
-- `AuditLogs` kritik operasyon kayıtlarını, `TableReservations` masa rezervasyonlarını tutar.
+- `Branches`, kullanıcı, masa, terminal, ayar ve shift kayıtlarıyla ilişkilidir.
+- `RestaurantTables`, aktif adisyonu `CurrentBillId` ile `Bills` tablosuna bağlar.
+- `Bills`, masa, şube, garson ve ödeme toplamlarını; `BillItems` ürün snapshot bilgilerini tutar.
+- `Products`, `ProductCategories`; `Payments` ise `Bills`, `Users` ve `PosTerminals` ile ilişkilidir.
+- `RolePermissions`, `AuditLogs` ve `TableReservations` yetki, denetim ve rezervasyon süreçlerini destekler.
 
 ### Ekran Görüntüleri
 
 Aşağıdaki ekran görüntüleri, web paneli ve mobil garson uygulamasının temel bölümlerini göstermektedir.
 
-#### Web Screenshots
+#### Web Ekranları
 
-| Ekran | Dosya |
+| Dashboard / Masa Planı | Adisyon Detayı |
 | --- | --- |
-| Dashboard / Masa Planı | `docs/screenshots/web-dashboard.png` |
-| Adisyon Detayı | `docs/screenshots/web-bill-detail.png` |
-| Ödeme Ekranı | `docs/screenshots/web-payment-screen.png` |
-| Bölünmüş Ödeme | `docs/screenshots/web-split-payment.png` |
-| Mutfak Ekranı | `docs/screenshots/web-kitchen.png` |
-| İşlem Geçmişi | `docs/screenshots/web-history.png` |
-| İade / İptal | `docs/screenshots/web-refund.png` |
-| Terminal Yönetimi | `docs/screenshots/web-terminal-management.png` |
-| Gün Sonu Mutabakat | `docs/screenshots/web-end-of-day.png` |
-| Raporlar | `docs/screenshots/web-reports.png` |
-| Menü Yönetimi | `docs/screenshots/web-menu-management.png` |
-| Rol ve Yetki Matrisi | `docs/screenshots/web-role-permissions.png` |
+| ![Dashboard / Masa Planı](docs/screenshots/web-dashboard.png) | ![Adisyon Detayı](docs/screenshots/web-bill-detail.png) |
+| Ödeme Ekranı | Mutfak Ekranı |
+| ![Ödeme Ekranı](docs/screenshots/web-payment-screen.png) | ![Mutfak Ekranı](docs/screenshots/web-kitchen.png) |
 
-#### Mobile Screenshots
+Diğer web ekranları:
 
-| Ekran | Dosya |
+- Bölünmüş Ödeme: `docs/screenshots/web-split-payment.png`
+- İşlem Geçmişi: `docs/screenshots/web-history.png`
+- İade / İptal: `docs/screenshots/web-refund.png`
+- Terminal Yönetimi: `docs/screenshots/web-terminal-management.png`
+- Gün Sonu Mutabakat: `docs/screenshots/web-end-of-day.png`
+- Raporlar: `docs/screenshots/web-reports.png`
+- Menü Yönetimi: `docs/screenshots/web-menu-management.png`
+- Rol ve Yetki Matrisi: `docs/screenshots/web-role-permissions.png`
+
+#### Mobil Ekranlar
+
+| Mobil Masa Planı | Mobil Ürün Seçimi |
 | --- | --- |
-| Mobil Masa Planı | `docs/screenshots/mobile-tables.png` |
-| Mobil Masa Detayı | `docs/screenshots/mobile-table-detail.png` |
-| Mobil Masa İşlemleri | `docs/screenshots/mobile-table-actions.png` |
-| Mobil Ürün Seçimi | `docs/screenshots/mobile-product-selection.png` |
-| Mobil Ödeme | `docs/screenshots/mobile-payment.png` |
-| Mobil Bölünmüş Ödeme | `docs/screenshots/mobile-split-payment.png` |
-| Mobil Temassız Ödeme Bekleme | `docs/screenshots/mobile-contactless-payment.png` |
+| ![Mobil Masa Planı](docs/screenshots/mobile-tables.png) | ![Mobil Ürün Seçimi](docs/screenshots/mobile-product-selection.png) |
+| Mobil Ödeme | Mobil Bölünmüş Ödeme |
+| ![Mobil Ödeme](docs/screenshots/mobile-payment.png) | ![Mobil Bölünmüş Ödeme](docs/screenshots/mobile-split-payment.png) |
+
+Diğer mobil ekranlar:
+
+- Mobil Masa Detayı: `docs/screenshots/mobile-table-detail.png`
+- Mobil Masa İşlemleri: `docs/screenshots/mobile-table-actions.png`
+- Mobil Temassız Ödeme Bekleme: `docs/screenshots/mobile-contactless-payment.png`
 
 ### Proje Yapısı
 
@@ -468,18 +459,6 @@ EF Core Service + Repository Layer
 Supabase PostgreSQL
 ```
 
-Mobile live read flow:
-
-```text
-Supabase PostgreSQL
-      |
-      v
-Supabase live reads / realtime sync
-      |
-      v
-Expo mobile app
-```
-
 ### Database and Process Structure
 
 The full SQL script is intentionally not embedded in this README. The schema is managed through EF Core migrations and the Supabase PostgreSQL database.
@@ -516,14 +495,11 @@ Critical operation logs and EF Core migration history.
 
 #### Core Relationships
 
-- `Branches` has many users, tables, terminals, settings and shifts.
+- `Branches` relates to users, tables, terminals, settings and shifts.
 - `RestaurantTables` links the active bill through `CurrentBillId` to `Bills`.
-- `Bills` stores table, branch, waiter and payment total information.
-- `BillItems` stores bill line items with product snapshot data.
-- `Products` belongs to `ProductCategories`.
-- `Payments` relates to `Bills`, `Users` and `PosTerminals`.
-- `RolePermissions` controls role-permission mappings.
-- `AuditLogs` stores critical operation records, and `TableReservations` stores table reservations.
+- `Bills` stores table, branch, waiter and payment totals; `BillItems` stores product snapshots.
+- `Products` belongs to `ProductCategories`; `Payments` relates to `Bills`, `Users` and `PosTerminals`.
+- `RolePermissions`, `AuditLogs` and `TableReservations` support permission, audit and reservation flows.
 
 ### Screenshots
 
@@ -531,32 +507,36 @@ The following screenshots show the main parts of the web panel and mobile waiter
 
 #### Web Screenshots
 
-| Screen | File |
+| Dashboard / Table Plan | Bill Detail |
 | --- | --- |
-| Dashboard / Table Plan | `docs/screenshots/web-dashboard.png` |
-| Bill Detail | `docs/screenshots/web-bill-detail.png` |
-| Payment Screen | `docs/screenshots/web-payment-screen.png` |
-| Split Payment | `docs/screenshots/web-split-payment.png` |
-| Kitchen Screen | `docs/screenshots/web-kitchen.png` |
-| Transaction History | `docs/screenshots/web-history.png` |
-| Refund / Cancel | `docs/screenshots/web-refund.png` |
-| Terminal Management | `docs/screenshots/web-terminal-management.png` |
-| End-of-Day Reconciliation | `docs/screenshots/web-end-of-day.png` |
-| Reports | `docs/screenshots/web-reports.png` |
-| Menu Management | `docs/screenshots/web-menu-management.png` |
-| Role and Permission Matrix | `docs/screenshots/web-role-permissions.png` |
+| ![Dashboard / Table Plan](docs/screenshots/web-dashboard.png) | ![Bill Detail](docs/screenshots/web-bill-detail.png) |
+| Payment Screen | Kitchen Screen |
+| ![Payment Screen](docs/screenshots/web-payment-screen.png) | ![Kitchen Screen](docs/screenshots/web-kitchen.png) |
+
+Other web screens:
+
+- Split Payment: `docs/screenshots/web-split-payment.png`
+- Transaction History: `docs/screenshots/web-history.png`
+- Refund / Cancel: `docs/screenshots/web-refund.png`
+- Terminal Management: `docs/screenshots/web-terminal-management.png`
+- End-of-Day Reconciliation: `docs/screenshots/web-end-of-day.png`
+- Reports: `docs/screenshots/web-reports.png`
+- Menu Management: `docs/screenshots/web-menu-management.png`
+- Role and Permission Matrix: `docs/screenshots/web-role-permissions.png`
 
 #### Mobile Screenshots
 
-| Screen | File |
+| Mobile Table Plan | Mobile Product Selection |
 | --- | --- |
-| Mobile Table Plan | `docs/screenshots/mobile-tables.png` |
-| Mobile Table Detail | `docs/screenshots/mobile-table-detail.png` |
-| Mobile Table Actions | `docs/screenshots/mobile-table-actions.png` |
-| Mobile Product Selection | `docs/screenshots/mobile-product-selection.png` |
-| Mobile Payment | `docs/screenshots/mobile-payment.png` |
-| Mobile Split Payment | `docs/screenshots/mobile-split-payment.png` |
-| Mobile Contactless Payment Waiting | `docs/screenshots/mobile-contactless-payment.png` |
+| ![Mobile Table Plan](docs/screenshots/mobile-tables.png) | ![Mobile Product Selection](docs/screenshots/mobile-product-selection.png) |
+| Mobile Payment | Mobile Split Payment |
+| ![Mobile Payment](docs/screenshots/mobile-payment.png) | ![Mobile Split Payment](docs/screenshots/mobile-split-payment.png) |
+
+Other mobile screens:
+
+- Mobile Table Detail: `docs/screenshots/mobile-table-detail.png`
+- Mobile Table Actions: `docs/screenshots/mobile-table-actions.png`
+- Mobile Contactless Payment Waiting: `docs/screenshots/mobile-contactless-payment.png`
 
 ### Project Structure
 
