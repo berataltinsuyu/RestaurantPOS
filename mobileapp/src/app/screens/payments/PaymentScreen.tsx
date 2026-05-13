@@ -6,7 +6,10 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { getBackendErrorMessage } from "../../../api/http/api-client";
+import {
+  getBackendErrorMessage,
+  isExpectedPaymentAuthorizationError,
+} from "../../../api/http/api-client";
 import { BottomActionBar } from "../../../components/common/BottomActionBar";
 import { Button } from "../../../components/common/Button";
 import { FeedbackBanner } from "../../../components/common/FeedbackBanner";
@@ -169,7 +172,11 @@ export function PaymentScreen({ navigation, route }: Props) {
       navigation.navigate(ROUTES.SPLIT_PAYMENT, { tableId: currentTable.id });
       completed = true;
     } catch (error) {
-      console.error("[PaymentScreen] Payment action failed.", error);
+      if (isExpectedPaymentAuthorizationError(error)) {
+        console.warn("[PaymentScreen] Payment action forbidden.", error);
+      } else {
+        console.error("[PaymentScreen] Payment action failed.", error);
+      }
       const detail = getBackendErrorMessage(
         error,
         "İşlem backend üzerinde tamamlanamadı. Lütfen tekrar deneyin.",

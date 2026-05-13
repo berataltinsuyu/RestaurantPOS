@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AppSidebar } from '../components/AppSidebar';
 import { TopBar } from '../components/TopBar';
@@ -63,6 +64,7 @@ interface TableOperationItem {
 
 export default function Dashboard() {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moveTableOpen, setMoveTableOpen] = useState(false);
   const [mergeTablesOpen, setMergeTablesOpen] = useState(false);
@@ -297,19 +299,35 @@ export default function Dashboard() {
     toast.error(getErrorMessage(error, fallbackMessage));
   };
 
+  const resolveOpenedBillId = async (openedTable: TableSummaryDto) => {
+    if (openedTable.currentBillId) {
+      return openedTable.currentBillId;
+    }
+
+    const activeBill = await billsApi.getByTable(openedTable.id);
+    return activeBill?.id ?? null;
+  };
+
   const handleOpenTable = async (data: { tableNo: string; waiterId: string; guestCount: number; notes?: string }) => {
-    if (!selectedTableToOpen) {
+    const targetTable = selectedTableToOpen;
+    if (!targetTable) {
       return;
     }
 
     try {
-      await tablesApi.open(selectedTableToOpen.id, {
+      const openedTable = await tablesApi.open(targetTable.id, {
         waiterId: Number(data.waiterId),
         guestCount: data.guestCount,
         note: data.notes,
       });
-      toast.success(`${selectedTableToOpen.tableNo} başarıyla açıldı.`);
-      await loadDashboardData();
+      const activeBillId = await resolveOpenedBillId(openedTable);
+
+      if (!activeBillId) {
+        throw new Error('Masa açıldı ancak aktif adisyon bilgisi alınamadı.');
+      }
+
+      toast.success(`${openedTable.tableNo} başarıyla açıldı.`);
+      navigate(`/bill/${openedTable.id}`);
     } catch (error) {
       handleOperationError(error, 'Masa açılamadı.');
     }
@@ -573,15 +591,6 @@ export default function Dashboard() {
                 <span className="text-xs font-medium">İkram Onayı</span>
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={() => setOpenTableOpen(true)}
-                className="flex-col h-auto py-4 gap-2"
-                disabled={!tables.some((table) => table.status === 'Bos')}
-              >
-                <Users className="w-5 h-5 text-blue-600" />
-                <span className="text-xs font-medium">Masa Aç</span>
-              </Button>
             </div>
           </div>
 

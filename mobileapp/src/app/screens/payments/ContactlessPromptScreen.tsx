@@ -11,7 +11,10 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { getBackendErrorMessage } from "../../../api/http/api-client";
+import {
+  getBackendErrorMessage,
+  isExpectedPaymentAuthorizationError,
+} from "../../../api/http/api-client";
 import { BottomActionBar } from "../../../components/common/BottomActionBar";
 import { Button } from "../../../components/common/Button";
 import { Screen } from "../../../components/common/Screen";
@@ -155,7 +158,11 @@ export function ContactlessPromptScreen({ navigation, route }: Props) {
         tableId,
       });
     } catch (error) {
-      console.error("[ContactlessPromptScreen] Card confirmation failed.", error);
+      if (isExpectedPaymentAuthorizationError(error)) {
+        console.warn("[ContactlessPromptScreen] Card confirmation forbidden.", error);
+      } else {
+        console.error("[ContactlessPromptScreen] Card confirmation failed.", error);
+      }
       const detail = getBackendErrorMessage(
         error,
         "Temassız işlem tamamlanamadı. Kartı tekrar yaklaştırın; olmazsa kartı çip ile takarak deneyin veya başka bir ödeme yöntemi seçin.",

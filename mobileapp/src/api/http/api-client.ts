@@ -114,15 +114,20 @@ export class MobileApiClient {
 
     if (!response.ok) {
       const responseBody = await response.text();
-
-      console.error("[MobileApiClient] Request failed.", {
+      const requestFailureContext = {
         method,
         path: normalizedPath,
         requestBody,
         responseBody,
         status: response.status,
         url,
-      });
+      };
+
+      if (response.status === 403 && normalizedPath.startsWith("/api/payments")) {
+        console.warn("[MobileApiClient] Payment request forbidden.", requestFailureContext);
+      } else {
+        console.error("[MobileApiClient] Request failed.", requestFailureContext);
+      }
 
       throw new ApiRequestError(
         `API request failed with status ${response.status}.`,
@@ -159,6 +164,10 @@ export function getBackendErrorMessage(
   fallbackMessage: string,
 ) {
   if (error instanceof ApiRequestError) {
+    if (isExpectedPaymentAuthorizationError(error)) {
+      return "Ödeme işlemi yetki nedeniyle tamamlanamadı. Oturumu yenileyip tekrar deneyin; sorun sürerse yetkili kullanıcıyla kontrol edin.";
+    }
+
     const parsedMessage = parseBackendErrorBody(error.responseBody);
 
     if (parsedMessage) {
@@ -170,10 +179,6 @@ export function getBackendErrorMessage(
     }
 
     if (error.status === 403) {
-      if (error.path.startsWith("/api/payments")) {
-        return "Bu kullanıcı hesabı ödeme işlemi için yetkili değil. Kasiyer, Şube Müdürü veya Yönetici hesabıyla giriş yapın.";
-      }
-
       return "Bu işlem için yetkiniz bulunmuyor.";
     }
 
@@ -189,6 +194,14 @@ export function getBackendErrorMessage(
   }
 
   return fallbackMessage;
+}
+
+export function isExpectedPaymentAuthorizationError(error: unknown) {
+  return (
+    error instanceof ApiRequestError &&
+    error.status === 403 &&
+    error.path.startsWith("/api/payments")
+  );
 }
 
 function parseBackendErrorBody(responseBody?: string) {

@@ -287,26 +287,6 @@ export function TableDetailScreen({ navigation, route }: Props) {
               Bu masa açıldı ancak adisyona ürün eklenmedi. Ürün ekleyebilir
               veya boş adisyonu güvenle kapatabilirsiniz.
             </Text>
-            <View style={styles.emptyActions}>
-              <Button
-                fullWidth={false}
-                onPress={() =>
-                  navigation.navigate(ROUTES.MENU_SELECTION, { tableId: table.id })
-                }
-                size="md"
-                title="Ürün Ekle"
-              />
-              {canCloseEmptyBill ? (
-                <Button
-                  disabled={isClosingEmptyBill}
-                  fullWidth={false}
-                  onPress={confirmCloseEmptyBill}
-                  size="md"
-                  title="Boş Adisyonu Kapat"
-                  variant="secondary"
-                />
-              ) : null}
-            </View>
           </View>
         )}
       </SurfaceCard>
@@ -353,13 +333,6 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: "center",
     paddingVertical: spacing.xl,
-  },
-  emptyActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    justifyContent: "center",
-    marginTop: spacing.md,
   },
   emptyTitle: {
     color: colors.textPrimary,

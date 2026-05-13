@@ -53,6 +53,10 @@ export function FilterChip({
       ]}
     >
       <Text
+        adjustsFontSizeToFit
+        ellipsizeMode="tail"
+        minimumFontScale={0.92}
+        numberOfLines={1}
         style={[
           styles.label,
           selected

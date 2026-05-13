@@ -46,31 +46,51 @@ export function TableStatCard({
         },
       ]}
     >
-      <Text style={[styles.label, { color: palette.labelColor }]}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <Text
+        adjustsFontSizeToFit
+        ellipsizeMode="tail"
+        minimumFontScale={0.9}
+        numberOfLines={1}
+        style={[styles.label, { color: palette.labelColor }]}
+      >
+        {label}
+      </Text>
+      <Text
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}
+        numberOfLines={1}
+        style={styles.value}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    alignItems: "center",
     borderRadius: radii.md,
     borderWidth: 1,
     flex: 1,
-    minHeight: 78,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    justifyContent: "center",
+    minHeight: 74,
+    minWidth: 0,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   label: {
-    fontSize: typography.label.fontSize,
+    fontSize: typography.caption.fontSize,
     fontWeight: typography.label.fontWeight,
-    lineHeight: typography.label.lineHeight,
-    marginBottom: spacing.xs,
+    lineHeight: typography.caption.lineHeight,
+    marginBottom: spacing.xxs,
+    textAlign: "center",
   },
   value: {
     color: colors.textPrimary,
-    fontSize: typography.display.fontSize,
+    fontSize: typography.amountLarge.fontSize,
     fontWeight: typography.heading.fontWeight,
-    lineHeight: 28,
+    lineHeight: typography.amountLarge.lineHeight,
+    textAlign: "center",
   },
 });

@@ -1,9 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { getBackendErrorMessage } from "../../../api/http/api-client";
-import { Button } from "../../../components/common/Button";
 import { FeedbackBanner } from "../../../components/common/FeedbackBanner";
 import { FilterChip } from "../../../components/common/FilterChip";
 import { Screen } from "../../../components/common/Screen";
@@ -85,9 +91,7 @@ export function TablesOverviewScreen({ navigation }: Props) {
     [tables],
   );
 
-  const waiterSubtitle = session
-    ? `${session.waiterName} - Garson`
-    : "Aktif garson oturumu";
+  const waiterName = session?.waiterName ?? "Aktif garson oturumu";
 
   function openTableActionsSheet() {
     if (!tables.length) {
@@ -183,42 +187,59 @@ export function TablesOverviewScreen({ navigation }: Props) {
   return (
     <Screen contentContainerStyle={styles.content} includeTopSafeArea>
       <View style={styles.infoRow}>
-        <View style={styles.infoLeftCluster}>
-          <BrandMark />
-          <View style={styles.waiterBlock}>
-            <Text style={styles.screenTitle}>Masalar</Text>
-            <View style={styles.waiterRow}>
-              <Text numberOfLines={1} style={styles.waiterName}>
-                {waiterSubtitle}
-              </Text>
-              <Pressable
-                accessibilityHint="Garson oturumunu kapatır ve giriş ekranına döner"
-                accessibilityLabel="Garson değiştir"
-                accessibilityRole="button"
-                android_ripple={{ color: "rgba(214,169,55,0.12)", radius: 18 }}
-                hitSlop={8}
-                onPress={handleLogout}
-                style={({ pressed }) => [
-                  styles.logoutButton,
-                  pressed ? styles.logoutButtonPressed : null,
-                ]}
+        <View style={styles.infoTopRow}>
+          <View style={styles.infoLeftCluster}>
+            <BrandMark />
+            <View style={styles.waiterBlock}>
+              <Text style={styles.screenTitle}>Masalar</Text>
+              <Text
+                ellipsizeMode="tail"
+                numberOfLines={1}
+                style={styles.waiterName}
               >
-                <SessionExitIcon />
-              </Pressable>
+                {waiterName}
+              </Text>
             </View>
           </View>
+
+          <Pressable
+            accessibilityHint="Garson oturumunu kapatır ve giriş ekranına döner"
+            accessibilityLabel="Garson değiştir"
+            accessibilityRole="button"
+            android_ripple={{ color: "rgba(214,169,55,0.12)", radius: 18 }}
+            hitSlop={8}
+            onPress={handleLogout}
+            style={({ pressed }) => [
+              styles.logoutButton,
+              pressed ? styles.logoutButtonPressed : null,
+            ]}
+          >
+            <SessionExitIcon />
+          </Pressable>
         </View>
 
-        <Button
+        <Pressable
+          accessibilityLabel="Masa İşlemleri"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !tables.length }}
+          android_ripple={{ color: "rgba(214,169,55,0.12)" }}
           disabled={!tables.length}
-          fullWidth={false}
-          leading={<CogIcon compact />}
           onPress={openTableActionsSheet}
-          size="md"
-          style={styles.headerActionButton}
-          title="Masa İşlemleri"
-          variant="brandOutline"
-        />
+          style={({ pressed }) => [
+            styles.headerActionButton,
+            !tables.length ? styles.headerActionButtonDisabled : null,
+            pressed && tables.length ? styles.headerActionButtonPressed : null,
+          ]}
+        >
+          <CogIcon />
+          <Text
+            ellipsizeMode="tail"
+            numberOfLines={1}
+            style={styles.headerActionText}
+          >
+            Masa İşlemleri
+          </Text>
+        </Pressable>
       </View>
 
       {feedback ? (
@@ -255,7 +276,12 @@ export function TablesOverviewScreen({ navigation }: Props) {
         />
       </View>
 
-      <View style={styles.filtersRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filtersRow}
+        contentContainerStyle={styles.filtersContent}
+      >
         <FilterChip
           label="Tümü"
           onPress={() => setActiveFilter("all")}
@@ -281,7 +307,7 @@ export function TablesOverviewScreen({ navigation }: Props) {
           style={styles.filterChip}
           tone="warning"
         />
-      </View>
+      </ScrollView>
 
       {filteredTables.length ? (
         <View style={styles.grid}>
@@ -474,14 +500,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   filterChip: {
-    flex: 1,
+    flexShrink: 0,
+    minWidth: 74,
+    paddingHorizontal: spacing.sm,
   },
   feedbackBanner: {
     marginBottom: spacing.sm,
   },
-  filtersRow: {
-    flexDirection: "row",
+  filtersContent: {
     gap: spacing.xs,
+    paddingRight: spacing.xxs,
+  },
+  filtersRow: {
+    flexGrow: 0,
   },
   grid: {
     flexDirection: "row",
@@ -490,24 +521,48 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
   },
   headerActionButton: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: colors.primary,
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    flexDirection: "row",
+    gap: spacing.xs,
+    justifyContent: "center",
     marginBottom: 0,
-    minHeight: 48,
+    minHeight: 44,
     paddingHorizontal: spacing.md,
-    paddingLeft: spacing.sm,
-    paddingRight: spacing.sm,
+  },
+  headerActionButtonDisabled: {
+    opacity: 0.52,
+  },
+  headerActionButtonPressed: {
+    opacity: 0.95,
+    transform: [{ scale: 0.988 }],
+  },
+  headerActionText: {
+    color: colors.primary,
+    flexShrink: 1,
+    fontSize: typography.label.fontSize,
+    fontWeight: typography.label.fontWeight,
+    lineHeight: typography.label.lineHeight,
   },
   infoLeftCluster: {
     alignItems: "center",
     flex: 1,
     flexDirection: "row",
+    gap: spacing.sm,
     minWidth: 0,
     paddingRight: spacing.sm,
   },
   infoRow: {
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  infoTopRow: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: spacing.xs,
   },
   logoutArrowHead: {
     backgroundColor: colors.primary,
@@ -633,9 +688,5 @@ const styles = StyleSheet.create({
     fontSize: typography.body.fontSize,
     fontWeight: typography.bodyStrong.fontWeight,
     lineHeight: typography.body.lineHeight,
-  },
-  waiterRow: {
-    alignItems: "center",
-    flexDirection: "row",
   },
 });

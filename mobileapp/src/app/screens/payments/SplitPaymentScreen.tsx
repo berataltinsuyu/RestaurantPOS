@@ -9,7 +9,10 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { getBackendErrorMessage } from "../../../api/http/api-client";
+import {
+  getBackendErrorMessage,
+  isExpectedPaymentAuthorizationError,
+} from "../../../api/http/api-client";
 import { BottomActionBar } from "../../../components/common/BottomActionBar";
 import { Button } from "../../../components/common/Button";
 import { InfoRow } from "../../../components/common/InfoRow";
@@ -318,7 +321,11 @@ export function SplitPaymentScreen({ navigation, route }: Props) {
       });
       completed = true;
     } catch (error) {
-      console.error("[SplitPaymentScreen] Split payment completion failed.", error);
+      if (isExpectedPaymentAuthorizationError(error)) {
+        console.warn("[SplitPaymentScreen] Split payment forbidden.", error);
+      } else {
+        console.error("[SplitPaymentScreen] Split payment completion failed.", error);
+      }
       const detail = getBackendErrorMessage(
         error,
         "İşlem backend üzerinde tamamlanamadı. Lütfen tekrar deneyin.",
