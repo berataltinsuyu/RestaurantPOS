@@ -227,11 +227,11 @@ Bu grup kritik operasyon kayıtları ve EF Core migration geçmişi için kullan
 - `AuditLogs`, kritik operasyon kayıtlarını tutar.
 - `TableReservations`, masa rezervasyonlarını tutar.
 
-ERD notu: Veritabanı şeması ekran görüntüsü `docs/screenshots/database-schema.png` altında tutulabilir.
+Veritabanı şeması, aşağıdaki ekran görüntüleri bölümünde ayrıca gösterilmiştir.
 
 ### Ekran Görüntüleri
 
-Görseller `docs/screenshots/` altında tutulacak şekilde referanslanmıştır. Bu repo kopyasında screenshot dosyaları henüz bulunmuyorsa tabloda hedef dosya pathleri gösterilir; görseller eklendiğinde pathler GitHub üzerinde preview formatına çevrilebilir.
+Aşağıdaki ekran görüntüleri, web paneli, mobil garson uygulaması ve veritabanı yapısının temel bölümlerini göstermektedir.
 
 #### Web Screenshots
 
@@ -249,7 +249,6 @@ Görseller `docs/screenshots/` altında tutulacak şekilde referanslanmıştır.
 | Raporlar | `docs/screenshots/web-reports.png` |
 | Menü Yönetimi | `docs/screenshots/web-menu-management.png` |
 | Rol ve Yetki Matrisi | `docs/screenshots/web-role-permissions.png` |
-| Veritabanı Şeması | `docs/screenshots/database-schema.png` |
 
 #### Mobile Screenshots
 
@@ -262,6 +261,10 @@ Görseller `docs/screenshots/` altında tutulacak şekilde referanslanmıştır.
 | Mobil Ödeme | `docs/screenshots/mobile-payment.png` |
 | Mobil Bölünmüş Ödeme | `docs/screenshots/mobile-split-payment.png` |
 | Mobil Temassız Ödeme Bekleme | `docs/screenshots/mobile-contactless-payment.png` |
+
+#### Database Diagram
+
+![Database Schema](docs/screenshots/database-schema.png)
 
 ### Proje Yapısı
 
@@ -348,7 +351,7 @@ EXPO_PUBLIC_BACKEND_BASE_URL=
 ### Canlı Demo / Demo Kullanım
 
 - Canlı frontend: https://restaurant-pos-pink.vercel.app
-- Backend Swagger: `<backend-swagger-url>/swagger`
+- Backend Swagger: Render üzerinde yayınlanan backend adresinin `/swagger` endpointi
 - Demo giriş bilgileri:
 
 | Rol / Kullanıcı | Kullanıcı adı | Şifre |
@@ -597,11 +600,11 @@ This group is used for critical operation logs and EF Core migration history.
 - `AuditLogs` stores critical operation records.
 - `TableReservations` stores table reservations.
 
-ERD note: A database schema screenshot can be kept under `docs/screenshots/database-schema.png`.
+The database schema is shown separately in the screenshots section below.
 
 ### Screenshots
 
-Screenshots are referenced under `docs/screenshots/`. If the screenshot files are not present in this repository copy yet, the tables show the intended target paths; once the images are added, the paths can be converted to GitHub image previews.
+The following screenshots show the main parts of the web panel, mobile waiter application and database structure.
 
 #### Web Screenshots
 
@@ -619,7 +622,6 @@ Screenshots are referenced under `docs/screenshots/`. If the screenshot files ar
 | Reports | `docs/screenshots/web-reports.png` |
 | Menu Management | `docs/screenshots/web-menu-management.png` |
 | Role and Permission Matrix | `docs/screenshots/web-role-permissions.png` |
-| Database Schema | `docs/screenshots/database-schema.png` |
 
 #### Mobile Screenshots
 
@@ -632,6 +634,10 @@ Screenshots are referenced under `docs/screenshots/`. If the screenshot files ar
 | Mobile Payment | `docs/screenshots/mobile-payment.png` |
 | Mobile Split Payment | `docs/screenshots/mobile-split-payment.png` |
 | Mobile Contactless Payment Waiting | `docs/screenshots/mobile-contactless-payment.png` |
+
+#### Database Diagram
+
+![Database Schema](docs/screenshots/database-schema.png)
 
 ### Project Structure
 
@@ -715,7 +721,18 @@ EXPO_PUBLIC_BACKEND_BASE_URL=
 
 ### Live Demo / Demo Usage
 
-- The live frontend URL, backend Swagger placeholder and demo account table are listed once in the Turkish `Canlı Demo / Demo Kullanım` section above.
+- Live frontend: https://restaurant-pos-pink.vercel.app
+- Backend Swagger is available through the `/swagger` endpoint of the deployed Render backend URL.
+- Demo accounts:
+
+| Role / User | Username | Password |
+| --- | --- | --- |
+| Waiter | `ahmet` | `Ahmet123!` |
+| Waiter | `ayse` | `Ayse123!` |
+| Cashier | `kasiyer` | `Kasiyer123!` |
+| Branch Manager | `mudur` | `Mudur123!` |
+| System Administrator | `admin` | `Admin123!` |
+
 - The listed accounts are demo users prepared only for portfolio and technical review purposes.
 - The frontend is hosted on Vercel, the backend is hosted on Render, and the database runs on Supabase.
 - Because the Render backend may run as a free/sleeping service, the first login or first API request can take a few seconds.
